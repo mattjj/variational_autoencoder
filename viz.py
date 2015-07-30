@@ -16,13 +16,13 @@ def generate_samples(n, W4, W5, b4, b5):
 
 def image_grid(grid_sidelen, W4, W5, b4, b5):
     im_flatlen = W5.get_value().shape[1]
-    im_sidelen = int(np.sqrt(flatlen))
+    im_sidelen = int(np.sqrt(im_flatlen))
     assert im_sidelen**2 == im_flatlen, 'images must be square'
 
     def _make_grid(imagevecs):
         reshaped = imagevecs.reshape(grid_sidelen,grid_sidelen,im_sidelen,im_sidelen)
         return np.vstack([np.hstack([
-            img.reshape(sidelen,sidelen)
+            img.reshape(im_sidelen,im_sidelen)
             for img in col]) for col in reshaped])
 
     plt.matshow(_make_grid(generate_samples(grid_sidelen**2, W4, W5, b4, b5)))
