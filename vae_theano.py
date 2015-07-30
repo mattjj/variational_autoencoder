@@ -1,11 +1,12 @@
 import numpy as np
+from numpy.random import permutation
 import theano
 from theano import tensor as T
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 from time import time
 from itertools import chain
 
-from util import floatX, sigmoid
+from util import floatX
 from optimization import sgd, adagrad, rmsprop, adadelta, adam, \
     momentum_sgd, nesterov
 
@@ -49,7 +50,7 @@ def make_params(Nx, Nh, Nz):
 ### loading data
 
 def load_mice():
-    data = np.load('images_small.npy').astype('float32')
+    data = np.load('data/images_for_vae.npy').astype(theano.config.floatX)[::2]
     data = np.random.permutation(data.reshape(data.shape[0], -1))
     data /= data.max()
     shared_data = theano.shared(floatX(data), borrow=True)
@@ -59,9 +60,7 @@ def load_mice():
 ### running
 
 if __name__ == '__main__':
-    minibatch_size = 5000
-    num_epochs = 500
-    z_dim = 20
+    z_dim = 30
     h_dim = 400
 
     (N, x_dim), trX = load_mice()
@@ -69,20 +68,28 @@ if __name__ == '__main__':
     X = T.fmatrices('X')
     params = W1, W2, W3, W4, W5, b1, b2, b3, b4, b5 = \
         make_params(x_dim, h_dim, z_dim)
-    cost = -vae_objective(minibatch_size, X, *params)
 
-    # updates = sgd(cost, params, 1e-5)
-    # updates = adagrad(cost, params, 1e-3)
-    # updates = adadelta(cost, params)
-    updates = adam(cost, params, 1e-3)
+    def fit(num_epochs, minibatch_size, learning_rate):
+        cost = -vae_objective(minibatch_size, X, *params)
+        updates = adam(cost, params, learning_rate)
 
-    index = T.lscalar()
-    train = theano.function(
-        inputs=[index], outputs=cost, updates=updates,
-        givens={X: trX[index*minibatch_size:(index+1)*minibatch_size]})
+        index = T.lscalar()
+        train = theano.function(
+            inputs=[index], outputs=cost, updates=updates,
+            givens={X: trX[index*minibatch_size:(index+1)*minibatch_size]})
 
-    num_batches = N // minibatch_size
-    for i in xrange(num_epochs):
-        tic = time()
-        cost = sum(train(batchidx) for batchidx in xrange(num_batches)) / N
-        print '{} {}'.format(time() - tic, cost)
+        num_batches = N // minibatch_size
+
+        print
+        print 'num_epochs = {}'.format(num_epochs)
+        print 'minibatch_size = {}'.format(minibatch_size)
+        print 'learning_rate = {}'.format(learning_rate)
+        print
+
+        for i in xrange(num_epochs):
+            tic = time()
+            objective = sum(train(bidx) for bidx in permutation(num_batches)) / N
+            print '{} {}'.format(time() - tic, objective)
+
+    fit(250, 5000, 1e-3)
+    fit(250, 5000, 1e-4)

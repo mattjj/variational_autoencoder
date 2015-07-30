@@ -2,6 +2,8 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 
+from util import sigmoid
+
 
 def decode(z, W4, W5, b4, b5):
     W4, W5, b4, b5 = [_.get_value() for _ in [W4, W5, b4, b5]]
@@ -32,3 +34,7 @@ def encode(x, W1, W2, b1, b2):
     # returns the mean of the corresponding variational factor
     h_encoder = np.tanh(x.dot(W1) + b1)
     return h_encoder.dot(W2) + b2
+
+
+# TODO maybe encode, do PCA, make a grid in those dimensions? what did people do
+# for mnist?
