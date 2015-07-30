@@ -9,7 +9,7 @@ from util import floatX, sigmoid
 from optimization import sgd, adagrad, rmsprop, adadelta, adam, \
     momentum_sgd, nesterov
 
-np.random.seed(1)
+np.random.seed(0)
 srng = RandomStreams(seed=1)
 
 
