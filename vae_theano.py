@@ -9,7 +9,7 @@ from util import floatX, sigmoid
 from optimization import sgd, adagrad, rmsprop, adadelta, adam, \
     momentum_sgd, nesterov
 
-np.random.seed(0)
+np.random.seed(1)
 srng = RandomStreams(seed=1)
 
 
@@ -44,19 +44,6 @@ def make_params(Nx, Nh, Nz):
     weight_shapes = [(Nx, Nh),(Nh, Nz), (Nh, Nz), (Nz, Nh), (Nh, Nx)]
     bias_shapes = [(b,) for a, b in weight_shapes]
     return [init_weights(shape) for shape in chain(weight_shapes, bias_shapes)]
-
-
-### visualizing results
-
-def decode(z, W4, W5, b4, b5):
-    W4, W5, b4, b5 = [_.get_value() for _ in [W4, W5, b4, b5]]
-    h_decoder = np.tanh(z.dot(W4) + b4)
-    return sigmoid(h_decoder.dot(W5) + b5)
-
-
-def generate_samples(n, W4, W5, b4, b5):
-    z_dim = W4.get_value().shape[0]
-    return decode(np.random.randn(100, z_dim))
 
 
 ### loading data
