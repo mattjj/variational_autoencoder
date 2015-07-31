@@ -5,8 +5,9 @@ from theano import tensor as T
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 from time import time
 from itertools import chain
+from functools import partial
 
-from util import floatX
+from util import floatX, argprint
 from optimization import sgd, adagrad, rmsprop, adadelta, adam, \
     momentum_sgd, nesterov
 
@@ -50,8 +51,9 @@ def make_params(Nx, Nh, Nz):
 ### loading data
 
 def load_mice():
-    data = np.load('data/images_for_vae.npy').astype(theano.config.floatX)[::2]
-    data = np.random.permutation(data.reshape(data.shape[0], -1))
+    # 750k is about the limit of my 3GB GPU
+    data = np.load('data/images_for_vae.npy').astype(theano.config.floatX)
+    data = np.random.permutation(data.reshape(data.shape[0], -1))[:250000]
     data /= data.max()
     shared_data = theano.shared(floatX(data), borrow=True)
     return data.shape, shared_data
@@ -60,8 +62,8 @@ def load_mice():
 ### running
 
 if __name__ == '__main__':
-    z_dim = 30
-    h_dim = 400
+    z_dim = 20
+    h_dim = 1000
 
     (N, x_dim), trX = load_mice()
 
@@ -69,27 +71,32 @@ if __name__ == '__main__':
     params = W1, W2, W3, W4, W5, b1, b2, b3, b4, b5 = \
         make_params(x_dim, h_dim, z_dim)
 
-    def fit(num_epochs, minibatch_size, learning_rate):
+    @argprint
+    def fit(num_epochs, minibatch_size, optimizer):
         cost = -vae_objective(minibatch_size, X, *params)
-        updates = adam(cost, params, learning_rate)
+        updates = optimizer(cost, params)
 
+        num_batches = N // minibatch_size
         index = T.lscalar()
         train = theano.function(
             inputs=[index], outputs=cost, updates=updates,
             givens={X: trX[index*minibatch_size:(index+1)*minibatch_size]})
 
-        num_batches = N // minibatch_size
-
-        print
-        print 'num_epochs = {}'.format(num_epochs)
-        print 'minibatch_size = {}'.format(minibatch_size)
-        print 'learning_rate = {}'.format(learning_rate)
-        print
-
+        tic = time()
         for i in xrange(num_epochs):
-            tic = time()
-            objective = sum(train(bidx) for bidx in permutation(num_batches)) / N
-            print '{} {}'.format(time() - tic, objective)
+            print sum(train(bidx) for bidx in permutation(num_batches)) / N
 
-    fit(250, 5000, 1e-3)
-    fit(250, 5000, 1e-4)
+            s = np.linalg.svd(W4.get_value())[1]
+            print s[np.argsort(-s)]
+        ellapsed = time() - tic
+        print '{} sec per update, {} sec total\n'.format(ellapsed / N, ellapsed)
+
+
+    s = np.linalg.svd(W4.get_value())[1]
+    print s[np.argsort(-s)]
+
+    fit(1, 20, adam(1e-5))
+    fit(20, 20, adam(5e-5))
+    fit(20, 20, adam(1e-4))
+    fit(50, 1000, adam(1e-5))
+
