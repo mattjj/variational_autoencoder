@@ -1,5 +1,5 @@
 import theano
-from theano import tensor as T
+import theano.tensor as T
 
 from util import shared_zeros_like, concat, floatX, argprint
 
