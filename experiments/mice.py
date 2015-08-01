@@ -22,7 +22,7 @@ if __name__ == '__main__':
     trX = load_mice(N)
     x_dim = trX.get_value().shape[1]
     encoder_params, decoder_params, all_params = \
-        init_params(x_dim, z_dim, [h_dim], [h_dim])
+        init_params(x_dim, z_dim, [h_dim, h_dim], [h_dim, h_dim])
     vlb = make_objective(encoder_params, decoder_params)
 
     @argprint
