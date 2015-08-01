@@ -7,27 +7,29 @@ from time import time
 
 from util import argprint
 from load import load_mice
-from vae import init_params, vae_objective
+from vae import init_params, make_objective
 from optimization import sgd, adagrad, rmsprop, adadelta, adam, \
     momentum_sgd, nesterov
 
 
 if __name__ == '__main__':
     np.random.seed(0)
-    srng = RandomStreams(seed=1)
 
-    N = 500000  # 750k is about the memory limit on 3GB GPU
+    N = 50000  # 750k is about the memory limit on 3GB GPU
     z_dim = 10
     h_dim = 200
 
-    x_dim, trX = load_mice(N)
+    trX = load_mice(N)
+    x_dim = trX.get_value().shape[1]
     encoder_params, decoder_params, all_params = \
-        make_params(x_dim, [200], z_dim, [200])
+        init_params(x_dim, z_dim, [200], [200])
+    vlb = make_objective(encoder_params, decoder_params)
 
     @argprint
-    def fit(num_epochs, minibatch_size, optimizer, L=1):
-        X = T.fmatrices('X')
-        cost = -vae_objective(X, encoder_params, decoder_params, minibatch_size, L)
+    def fit(num_epochs, minibatch_size, L, optimizer):
+        X = T.matrix('X', dtype=theano.config.floatX)
+
+        cost = -vlb(X, minibatch_size, L)
         updates = optimizer(cost, all_params)
 
         index = T.lscalar()
@@ -44,10 +46,10 @@ if __name__ == '__main__':
         print '{} sec per update, {} sec total\n'.format(ellapsed / N, ellapsed)
 
     def print_W4():
-        s = np.linalg.svd(decoder_params[0].get_value())[1]
+        s = np.linalg.svd(decoder_params[0][0].get_value())[1]
         print s[np.argsort(-s)]
 
     print_W4()
-    fit(1, 20, adam(1e-4), callback=print_W4)
-    fit(10, 20, adam(5e-4), callback=print_W4)
-    fit(100, 1000, adam(1e-4), callback=print_W4)
+    fit(1, 20, 1, adam(1e-4))
+    fit(10, 20, 1, adam(5e-4))
+    fit(100, 1000, 1, adam(1e-4))
