@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 
 from util import sigmoid
 
+# TODO update this file with the new multi-layer business
+
 
 def decode(z, W4, W5, b4, b5):
     W4, W5, b4, b5 = [_.get_value() for _ in [W4, W5, b4, b5]]

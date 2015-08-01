@@ -13,9 +13,9 @@ from optimization import sgd, adagrad, rmsprop, adadelta, adam, \
 
 
 if __name__ == '__main__':
-    np.random.seed(0)
+    np.random.seed(1)
 
-    N = 50000  # 750k is about the memory limit on 3GB GPU
+    N = 500000  # 750k is about the memory limit on 3GB GPU
     z_dim = 50
     h_dim = 400
 
