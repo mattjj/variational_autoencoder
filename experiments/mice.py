@@ -16,19 +16,20 @@ if __name__ == '__main__':
     np.random.seed(0)
 
     N = 50000  # 750k is about the memory limit on 3GB GPU
-    z_dim = 10
-    h_dim = 200
+    z_dim = 50
+    h_dim = 400
 
     trX = load_mice(N)
     x_dim = trX.get_value().shape[1]
     encoder_params, decoder_params, all_params = \
-        init_params(x_dim, z_dim, [200], [200])
+        init_params(x_dim, z_dim, [h_dim], [h_dim])
     vlb = make_objective(encoder_params, decoder_params)
 
     @argprint
     def fit(num_epochs, minibatch_size, L, optimizer):
-        X = T.matrix('X', dtype=theano.config.floatX)
+        num_batches = N // minibatch_size
 
+        X = T.matrix('X', dtype=theano.config.floatX)
         cost = -vlb(X, minibatch_size, L)
         updates = optimizer(cost, all_params)
 
@@ -36,7 +37,6 @@ if __name__ == '__main__':
         train = theano.function(
             inputs=[index], outputs=cost, updates=updates,
             givens={X: trX[index*minibatch_size:(index+1)*minibatch_size]})
-        num_batches = N // minibatch_size
 
         tic = time()
         for i in xrange(num_epochs):
@@ -51,5 +51,7 @@ if __name__ == '__main__':
 
     print_W4()
     fit(1, 20, 1, adam(1e-4))
-    fit(10, 20, 1, adam(5e-4))
-    fit(100, 1000, 1, adam(1e-4))
+    fit(3, 20, 1, adam(1e-4))
+    fit(9, 20, 1, adam(1e-4))
+
+    fit(100, 200, 1, adam(1e-4))

@@ -28,5 +28,6 @@ def init_tensor(shape, name=None):
         floatX(1e-2 * np.random.normal(size=shape)),
         borrow=True, name=name)
 
+
 def init_layer(shape):
     return init_tensor(shape), init_tensor(shape[1])
