@@ -14,13 +14,13 @@ def make_layer(activation):
     return layer
 
 
-def compose(layers):
-    return reduce(lambda f,g: lambda h: g(f(h)), layers)
-
-
 tanh_layer = make_layer(T.tanh)
 sigmoid_layer = make_layer(T.nnet.sigmoid)
 linear_layer = make_layer(lambda x: x)
+
+
+def compose(layers):
+    return reduce(lambda f,g: lambda h: g(f(h)), layers)
 
 
 def init_tensor(shape, name=None):
