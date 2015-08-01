@@ -42,7 +42,7 @@ if __name__ == '__main__':
         tic = time()
         for i in xrange(num_epochs):
             costval = sum(train(bidx) for bidx in permutation(num_batches)) / N
-            print 'iter {:4}: {:> .6}'.format(i, costval)
+            print 'iter {:>4} of {:>4}: {:> .6}'.format(i, num_epochs, costval)
             print_W4()
         ellapsed = time() - tic
         print '{} sec per update, {} sec total\n'.format(ellapsed / N, ellapsed)
