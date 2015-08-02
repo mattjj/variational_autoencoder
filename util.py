@@ -4,7 +4,6 @@ from collections import Iterable
 from itertools import chain
 from functools import wraps
 from inspect import getcallargs, getargspec
-from theano.sandbox.cuda.var import CudaNdarraySharedVariable as CNSV
 
 
 def floatX(X):
@@ -36,10 +35,11 @@ def concat(lst):
     return list(chain(*lst))
 
 
-from collections import Iterable
 def flatten(l):
     # NOTE: theano.sandbox.cuda.var.CudaNdarraySharedVariable is an instance of
     # collections.Iterable even though it doesn't support iteration!
+    from theano.sandbox.cuda.var import CudaNdarraySharedVariable as CNSV
+
     if isinstance(l, Iterable) and not isinstance(l, CNSV):
         return [y for x in l for y in flatten(x)]
     else:
