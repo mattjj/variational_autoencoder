@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from util import sigmoid
-from vae import encoder, decoder, get_zdim
+from vae import encoder, gaussian_decoder, get_zdim
 
 
 def make_grid(grid_sidelen, imagevecs):
@@ -14,13 +14,12 @@ def make_grid(grid_sidelen, imagevecs):
         for img in col]) for col in reshaped])
 
 
+def generate_samples(n, decoder_params):
+    zdim = get_zdim(decoder_params)
+    decode = gaussian_decoder(decoder_params)
+    return decode(np.random.randn(n, zdim))[0].eval()
+
+
 def sample_grid(sidelen, decoder_params):
     imagevecs = generate_samples(sidelen**2, decoder_params)
     plt.matshow(make_grid(sidelen, imagevecs))
-
-
-def generate_samples(n, decoder_params):
-    zdim = get_zdim(decoder_params)
-    decode = decoder(decoder_params)
-    return decode(np.random.randn(n, zdim)).eval()
-

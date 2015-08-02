@@ -7,7 +7,7 @@ from time import time
 
 from util import argprint
 from load import load_mice
-from vae import init_params, make_objective
+from vae import init_gaussian_params, make_gaussian_objective
 from optimization import sgd, adagrad, rmsprop, adadelta, adam, \
     momentum_sgd, nesterov
 
@@ -15,23 +15,23 @@ from optimization import sgd, adagrad, rmsprop, adadelta, adam, \
 if __name__ == '__main__':
     np.random.seed(2)
 
-    N = 750000  # 750k is about the memory limit on 3GB GPU
-    z_dim = 5
-    encoder_hdims = [500]
-    decoder_hdims = [500]
+    N = 500000  # 750k is about the memory limit on 3GB GPU
+    z_dim = 20
+    encoder_hdims = [50]
+    decoder_hdims = [50]
 
     trX = load_mice(N)
     x_dim = trX.get_value().shape[1]
     encoder_params, decoder_params, all_params = \
-        init_params(x_dim, z_dim, encoder_hdims, decoder_hdims)
-    vlb = make_objective(encoder_params, decoder_params)
+        init_gaussian_params(x_dim, z_dim, encoder_hdims, decoder_hdims)
+    vlb = make_gaussian_objective(encoder_params, decoder_params)
 
     @argprint
     def fit(num_epochs, minibatch_size, L, optimizer):
         num_batches = N // minibatch_size
 
         X = T.matrix('X', dtype=theano.config.floatX)
-        cost = -vlb(X, minibatch_size, L)
+        cost = -vlb(X, N, minibatch_size, L)
         updates = optimizer(cost, all_params)
 
         index = T.lscalar()
@@ -42,7 +42,7 @@ if __name__ == '__main__':
         tic = time()
         for i in xrange(num_epochs):
             costval = sum(train(bidx) for bidx in permutation(num_batches)) / N
-            print 'iter {:>4} of {:>4}: {:> .6}'.format(i, num_epochs, costval)
+            print 'iter {:>4} of {:>4}: {:> .6}'.format(i+1, num_epochs, costval)
             print_W4()
         ellapsed = time() - tic
         print '{} sec per update, {} sec total\n'.format(ellapsed / N, ellapsed)
@@ -53,9 +53,15 @@ if __name__ == '__main__':
 
     print_W4()
 
-    # fit(1, 20, 1, adam(1e-6))
-    # fit(3, 20, 1, adam(1e-6))
-    # fit(9, 200, 1, adam(1e-6))
+    fit(1, 20, 1, adam(1e-6))
+    fit(3, 20, 1, adam(1e-5))
+    fit(9, 20, 1, adam(1e-5))
 
-    fit(1000, 2000, 1, adam(1e-5))
+    fit(500, 2000, 1, adam(1e-4))
 
+    # fit(50, 200, 5, adam(1e-5))
+    # fit(100, 500, 5, adam(1e-5))
+    # fit(100, 2500, 5, adam(1e-5))
+
+    # TODO call viz code as we go
+    # TODO add plotting of training curves
