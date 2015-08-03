@@ -5,6 +5,7 @@ import theano
 import theano.tensor as T
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 from time import time
+import logging
 
 from util import floatX, flatten, argprint
 from nnet import compose, tanh_layer, sigmoid_layer, linear_layer, init_layer
@@ -130,7 +131,7 @@ def _make_objective(decoder, loglike):
             logpxz = sum(loglike(X, decode(sample_z(mu, log_sigmasq)))
                         for l in xrange(L)) / floatX(L)
 
-            return N/M * (-kl_to_prior(mu, log_sigmasq) + logpxz)
+            return (N/M) * (-kl_to_prior(mu, log_sigmasq) + logpxz)
 
         return vlb
     return make_objective
@@ -166,7 +167,7 @@ def make_gaussian_fitter(trX, z_dim, encoder_hdims, decoder_hdims, callback=None
 
         tic = time()
         for i in xrange(num_epochs):
-            costval = sum(train(bidx) for bidx in permutation(num_batches))
+            costval = sum(train(bidx) for bidx in permutation(num_batches)) / num_batches
             logging.info('iter {:>4} of {:>4}: {:> .6}'.format(i+1, num_epochs, costval / N))
             if callback: callback()
         ellapsed = time() - tic

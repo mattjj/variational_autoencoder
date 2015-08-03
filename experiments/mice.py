@@ -9,11 +9,10 @@ from optimization import sgd, adagrad, rmsprop, adadelta, adam, \
 
 
 if __name__ == '__main__':
-    np.random.seed(2)
-
     N = 750000  # 750k is about the memory limit on 3GB GPU
     trX = load_mice(N)
 
+    np.random.seed(2)
     encoder_params, decoder_params, fit = \
         make_gaussian_fitter(trX, 20, [50], [50])
 
