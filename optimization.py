@@ -38,7 +38,7 @@ def rmsprop(rate, rho=0.9, epsilon=1e-6):
             p_new = p - rate * g / T.sqrt(c_new + epsilon)
             return [(c, c_new), (p, p_new)]
 
-        return concat(make_update(p, g, a) for p, g, a in zip(params, grads, sumsq))
+        return concat(make_update(p, g, c) for p, g, c in zip(params, grads, sumsq))
     return rmsprop
 
 

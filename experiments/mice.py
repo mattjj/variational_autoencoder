@@ -12,16 +12,8 @@ from optimization import sgd, adagrad, rmsprop, adadelta, adam, \
     momentum_sgd, nesterov
 
 
-if __name__ == '__main__':
-    np.random.seed(2)
-
-    N = 500000  # 750k is about the memory limit on 3GB GPU
-    z_dim = 20
-    encoder_hdims = [50]
-    decoder_hdims = [50]
-
-    trX = load_mice(N)
-    x_dim = trX.get_value().shape[1]
+def make_fitter(trX, z_dim, encoder_hdims, decoder_hdims, callback=None):
+    N, x_dim = trX.get_value().shape
     encoder_params, decoder_params, all_params = \
         init_gaussian_params(x_dim, z_dim, encoder_hdims, decoder_hdims)
     vlb = make_gaussian_objective(encoder_params, decoder_params)
@@ -41,27 +33,28 @@ if __name__ == '__main__':
 
         tic = time()
         for i in xrange(num_epochs):
-            costval = sum(train(bidx) for bidx in permutation(num_batches)) / N
-            print 'iter {:>4} of {:>4}: {:> .6}'.format(i+1, num_epochs, costval)
-            print_W4()
+            costval = sum(train(bidx) for bidx in permutation(num_batches))
+            print 'iter {:>4} of {:>4}: {:> .6}'.format(i+1, num_epochs, costval / N)
+            if callback: callback()
         ellapsed = time() - tic
         print '{} sec per update, {} sec total\n'.format(ellapsed / N, ellapsed)
 
-    def print_W4():
-        s = np.linalg.svd(decoder_params[0][0].get_value())[1]
-        print s[np.argsort(-s)]
+    return encoder_params, decoder_params, fit
 
-    print_W4()
 
-    fit(1, 20, 1, adam(1e-6))
-    fit(3, 20, 1, adam(1e-5))
-    fit(9, 20, 1, adam(1e-5))
+if __name__ == '__main__':
+    np.random.seed(2)
 
-    fit(500, 2000, 1, adam(1e-4))
+    N = 750000  # 750k is about the memory limit on 3GB GPU
+    trX = load_mice(N)
 
-    # fit(50, 200, 5, adam(1e-5))
-    # fit(100, 500, 5, adam(1e-5))
-    # fit(100, 2500, 5, adam(1e-5))
+    encoder_params, decoder_params, fit = make_fitter(trX, 10, [25], [25])
+
+    fit(1,  20, 1, adam(1e-6))
+    fit(3,  20, 1, adam(1e-5))
+    fit(9,  20, 1, adam(1e-5))
+    fit(27, 20, 1, adam(1e-5))
+    fit(1000, 5000, 1, adam(1e-6))
 
     # TODO call viz code as we go
     # TODO add plotting of training curves

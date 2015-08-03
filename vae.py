@@ -46,8 +46,8 @@ def _make_initializer(init_decoder):
     return init_params
 
 
-init_binary_params = make_initializer(init_binary_decoder)
-init_gaussian_params = make_initializer(init_gaussian_decoder)
+init_binary_params = _make_initializer(init_binary_decoder)
+init_gaussian_params = _make_initializer(init_gaussian_decoder)
 
 
 ##########################
