@@ -1,5 +1,6 @@
 import numpy as np
 import theano
+import logging
 from collections import Iterable
 from itertools import chain
 from functools import wraps, partial
@@ -41,6 +42,6 @@ def argprint(f):
         argspec = getargspec(f)
         arglist = ', '.join(
             '{}={}'.format(arg, bindings[arg]) for arg in argspec.args)
-        print '{}({})'.format(f.__name__, arglist)
+        logging.info('{}({})'.format(f.__name__, arglist))
         return f(*args, **kwargs)
     return wrapped

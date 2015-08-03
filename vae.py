@@ -1,8 +1,10 @@
 from __future__ import division
 import numpy as np
+from numpy.random import permutation
 import theano
 import theano.tensor as T
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
+from time import time
 
 from util import floatX, flatten, argprint
 from nnet import compose, tanh_layer, sigmoid_layer, linear_layer, init_layer
@@ -142,6 +144,7 @@ make_binary_objective = _make_objective(binary_decoder, binary_loglike)
 #  fitting  #
 #############
 
+@argprint
 def make_gaussian_fitter(trX, z_dim, encoder_hdims, decoder_hdims, callback=None):
     N, x_dim = trX.get_value().shape
     encoder_params, decoder_params, all_params = \
@@ -164,9 +167,9 @@ def make_gaussian_fitter(trX, z_dim, encoder_hdims, decoder_hdims, callback=None
         tic = time()
         for i in xrange(num_epochs):
             costval = sum(train(bidx) for bidx in permutation(num_batches))
-            print 'iter {:>4} of {:>4}: {:> .6}'.format(i+1, num_epochs, costval / N)
+            logging.info('iter {:>4} of {:>4}: {:> .6}'.format(i+1, num_epochs, costval / N))
             if callback: callback()
         ellapsed = time() - tic
-        print '{} sec per update, {} sec total\n'.format(ellapsed / N, ellapsed)
+        logging.info('{} sec per update, {} sec total\n'.format(ellapsed / N, ellapsed))
 
     return encoder_params, decoder_params, fit

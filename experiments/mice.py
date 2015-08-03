@@ -1,11 +1,7 @@
 import numpy as np
-from numpy.random import permutation
-import theano
-import theano.tensor as T
-from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
-from time import time
+import logging.config
+logging.config.fileConfig('logging.conf')
 
-from util import argprint
 from load import load_mice
 from vae import make_gaussian_fitter
 from optimization import sgd, adagrad, rmsprop, adadelta, adam, \
@@ -19,7 +15,7 @@ if __name__ == '__main__':
     trX = load_mice(N)
 
     encoder_params, decoder_params, fit = \
-        make_gaussian_fitter(trX, 10, [25], [25])
+        make_gaussian_fitter(trX, 20, [50], [50])
 
     fit(1,  20, 1, adam(1e-6))
     fit(3,  20, 1, adam(1e-5))
