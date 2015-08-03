@@ -4,7 +4,7 @@ import theano
 import theano.tensor as T
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
-from util import floatX, flatten
+from util import floatX, flatten, argprint
 from nnet import compose, tanh_layer, sigmoid_layer, linear_layer, init_layer
 
 srng = RandomStreams(seed=1)
@@ -136,3 +136,37 @@ def _make_objective(decoder, loglike):
 
 make_gaussian_objective = _make_objective(gaussian_decoder, gaussian_loglike)
 make_binary_objective = _make_objective(binary_decoder, binary_loglike)
+
+
+#############
+#  fitting  #
+#############
+
+def make_gaussian_fitter(trX, z_dim, encoder_hdims, decoder_hdims, callback=None):
+    N, x_dim = trX.get_value().shape
+    encoder_params, decoder_params, all_params = \
+        init_gaussian_params(x_dim, z_dim, encoder_hdims, decoder_hdims)
+    vlb = make_gaussian_objective(encoder_params, decoder_params)
+
+    @argprint
+    def fit(num_epochs, minibatch_size, L, optimizer):
+        num_batches = N // minibatch_size
+
+        X = T.matrix('X', dtype=theano.config.floatX)
+        cost = -vlb(X, N, minibatch_size, L)
+        updates = optimizer(cost, all_params)
+
+        index = T.lscalar()
+        train = theano.function(
+            inputs=[index], outputs=cost, updates=updates,
+            givens={X: trX[index*minibatch_size:(index+1)*minibatch_size]})
+
+        tic = time()
+        for i in xrange(num_epochs):
+            costval = sum(train(bidx) for bidx in permutation(num_batches))
+            print 'iter {:>4} of {:>4}: {:> .6}'.format(i+1, num_epochs, costval / N)
+            if callback: callback()
+        ellapsed = time() - tic
+        print '{} sec per update, {} sec total\n'.format(ellapsed / N, ellapsed)
+
+    return encoder_params, decoder_params, fit
