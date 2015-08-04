@@ -5,6 +5,7 @@ from collections import Iterable
 from itertools import chain
 from functools import wraps, partial
 from inspect import getcallargs, getargspec
+from types import FunctionType
 
 
 def floatX(X):
@@ -36,12 +37,16 @@ def flatten(l):
 
 
 def argprint(f):
+    def fstr(o):
+        return '{}()'.format(o.__name__) if isinstance(o, FunctionType) \
+            else str(o)
+
     @wraps(f)
     def wrapped(*args, **kwargs):
         bindings = getcallargs(f, *args, **kwargs)
         argspec = getargspec(f)
         arglist = ', '.join(
-            '{}={}'.format(arg, bindings[arg]) for arg in argspec.args)
+            '{}={}'.format(arg, fstr(bindings[arg])) for arg in argspec.args)
         logging.info('{}({})'.format(f.__name__, arglist))
         return f(*args, **kwargs)
     return wrapped

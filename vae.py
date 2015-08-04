@@ -131,8 +131,9 @@ def _make_objective(decoder, loglike):
             logpxz = sum(loglike(X, decode(sample_z(mu, log_sigmasq)))
                         for l in xrange(L)) / floatX(L)
 
-            return (N/M) * (-kl_to_prior(mu, log_sigmasq) + logpxz)
+            minibatch_val = -kl_to_prior(mu, log_sigmasq) + logpxz
 
+            return minibatch_val / M  # NOTE: multiply by N for overall vlb
         return vlb
     return make_objective
 
@@ -165,12 +166,12 @@ def make_gaussian_fitter(trX, z_dim, encoder_hdims, decoder_hdims, callback=None
             inputs=[index], outputs=cost, updates=updates,
             givens={X: trX[index*minibatch_size:(index+1)*minibatch_size]})
 
-        tic = time()
+        start = time()
         for i in xrange(num_epochs):
-            costval = sum(train(bidx) for bidx in permutation(num_batches)) / num_batches
-            logging.info('iter {:>4} of {:>4}: {:> .6}'.format(i+1, num_epochs, costval / N))
-            if callback: callback()
-        ellapsed = time() - tic
-        logging.info('{} sec per update, {} sec total\n'.format(ellapsed / N, ellapsed))
-
+            vals = [train(bidx) for bidx in permutation(num_batches)]
+            print 'epoch {:>4} of {:>4}: {:> .6}'.format(i+1, num_epochs, np.mean(vals))
+            if callback: callback(vals)
+        stop = time()
+        logging.info('epoch done, cost {}, {} sec per update, {} sec total\n'.format(
+            vals[-1], (stop - start) / N, stop - start))
     return encoder_params, decoder_params, fit
