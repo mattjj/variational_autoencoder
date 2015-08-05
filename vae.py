@@ -113,6 +113,10 @@ def gaussian_loglike(X, params):
         (np.log(2.*np.pi) + log_sigmasq) + (X - mu)**2. / T.exp(log_sigmasq))
 
 
+def kl_to_prior(mu, log_sigmasq):
+    return -0.5*T.sum(1. + log_sigmasq - mu**2. - T.exp(log_sigmasq))
+
+
 def _make_objective(decoder, loglike):
     def make_objective(encoder_params, decoder_params):
         encode = encoder(encoder_params)
@@ -123,9 +127,6 @@ def _make_objective(decoder, loglike):
             def sample_z(mu, log_sigmasq):
                 eps = srng.normal((M, z_dim), dtype=theano.config.floatX)
                 return mu + T.exp(0.5 * log_sigmasq) * eps
-
-            def kl_to_prior(mu, log_sigmasq):
-                return -0.5*T.sum(1. + log_sigmasq - mu**2. - T.exp(log_sigmasq))
 
             mu, log_sigmasq = encode(X)
             logpxz = sum(loglike(X, decode(sample_z(mu, log_sigmasq)))
@@ -153,6 +154,15 @@ def make_gaussian_fitter(trX, z_dim, encoder_hdims, decoder_hdims, callback=None
         init_gaussian_params(x_dim, z_dim, encoder_hdims, decoder_hdims)
     vlb = make_gaussian_objective(encoder_params, decoder_params)
 
+    def set_biases_to_data_stats(trX, decoder_params):
+        nnet_params, ((W_mu, b_mu), (W_sigma, b_sigma)) = \
+            decoder_params[:-2], decoder_params[-2:]
+        b_mu.set_value(trX.get_value().mean(0))
+        b_sigma.set_value(np.log(trX.get_value().var(0)))
+        return nnet_params + [(W_mu, b_mu), (W_sigma, b_sigma)]
+
+    decoder_params = set_biases_to_data_stats(trX, decoder_params)
+
     @argprint
     def fit(num_epochs, minibatch_size, L, optimizer):
         num_batches = N // minibatch_size
@@ -169,9 +179,9 @@ def make_gaussian_fitter(trX, z_dim, encoder_hdims, decoder_hdims, callback=None
         start = time()
         for i in xrange(num_epochs):
             vals = [train(bidx) for bidx in permutation(num_batches)]
-            print 'epoch {:>4} of {:>4}: {:> .6}'.format(i+1, num_epochs, np.mean(vals))
+            print 'epoch {:>4} of {:>4}: {:> .6}'.format(i+1, num_epochs, np.median(vals[-10:]))
             if callback: callback(vals)
         stop = time()
-        logging.info('epoch done, cost {}, {} sec per update, {} sec total\n'.format(
-            vals[-1], (stop - start) / N, stop - start))
+        logging.info('cost {}, {} sec per update, {} sec total\n'.format(
+            np.median(vals[-10:]), (stop - start) / N, stop - start))
     return encoder_params, decoder_params, fit

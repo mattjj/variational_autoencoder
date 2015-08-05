@@ -22,4 +22,14 @@ def generate_samples(n, decoder_params):
 
 def sample_grid(sidelen, decoder_params):
     imagevecs = generate_samples(sidelen**2, decoder_params)
-    plt.matshow(make_grid(sidelen, imagevecs))
+    return make_grid(sidelen, imagevecs)
+
+
+def training_grid(sidelen, trX):
+    imagevecs = np.random.permutation(trX.get_value())[:sidelen**2]
+    return make_grid(sidelen, imagevecs)
+
+
+def encode_seq(X, encoder_params):
+    encode = encoder(encoder_params)
+    return encode(X)[0].eval()
