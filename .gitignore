@@ -1,3 +1,4 @@
 *.npy
 *.npz
 *.pyc
+figures/*
