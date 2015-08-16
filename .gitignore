@@ -2,3 +2,4 @@
 *.npz
 *.pyc
 figures/*
+data/*
