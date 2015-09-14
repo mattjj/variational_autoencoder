@@ -59,7 +59,7 @@ class Interactive(object):
     ### initialization
 
     def _init_controlaxis(self, ax):
-        ax.axis([-1,1,-1,1])
+        ax.axis([-2,2,-2,2])
         ax.set_xticks([])
         ax.set_yticks([])
         ax.autoscale(False)
@@ -127,13 +127,14 @@ def numpy_gaussian_decoder(decoder_params):
     return decode
 
 
-def run_interactive(decoder_params):
+# TODO plot data distribution in latent space?
+def run_interactive(decoder_params, dims):
     zdim = get_zdim(decoder_params)
     decode = numpy_gaussian_decoder(decoder_params)
     vec = np.zeros(zdim)
 
     def draw(x, y):
-        vec[:2] = (x,y)
+        vec[dims] = (x,y)
         return reshape_square(decode(vec))
 
     return Interactive(draw, draw(0,0))
