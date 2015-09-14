@@ -6,15 +6,16 @@ from matplotlib import cm
 
 from vae import encoder, gaussian_decoder, get_zdim, unpack_gaussian_params
 from nnet import compose, numpy_tanh_layer, numpy_linear_layer
-from util import sigmoid
+from util import sigmoid, reshape_square
 
 
 def make_grid(grid_sidelen, imagevecs):
     im_sidelen = int(np.sqrt(imagevecs.shape[1]))
-    reshaped = imagevecs.reshape(grid_sidelen,grid_sidelen,im_sidelen,im_sidelen)
-    return np.vstack([np.hstack([
-        img.reshape(im_sidelen,im_sidelen)
-        for img in col]) for col in reshaped])
+    shape = 2*(grid_sidelen,) + 2*(im_sidelen,)
+    reshaped = imagevecs.reshape(shape)
+
+    return np.vstack(
+        [np.hstack([reshape_square(img) for img in col]) for col in reshaped])
 
 
 def generate_samples(n, decoder_params):
@@ -133,9 +134,6 @@ def run_interactive(decoder_params):
 
     def draw(x, y):
         vec[:2] = (x,y)
-        return decode(vec).reshape(30,30)  # TODO remove hard-coding
+        return reshape_square(decode(vec))
 
-    v = Interactive(draw, draw(0,0))
-    plt.show()
-
-    return v
+    return Interactive(draw, draw(0,0))

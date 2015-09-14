@@ -18,7 +18,10 @@ srng = RandomStreams(seed=1)
 ##########
 
 def get_zdim(decoder_params):
-    return decoder_params[0][0].get_value().shape[0]
+    try:
+        return decoder_params[0][0].get_value().shape[0]
+    except AttributeError:
+        return decoder_params[0][0].shape[0]
 
 
 ####################

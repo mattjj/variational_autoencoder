@@ -3,7 +3,7 @@ import theano
 import logging
 from collections import Iterable
 from itertools import chain
-from functools import wraps, partial
+from functools import wraps
 from inspect import getcallargs, getargspec
 from types import FunctionType
 
@@ -50,3 +50,8 @@ def argprint(f):
         logging.info('{}({})'.format(f.__name__, arglist))
         return f(*args, **kwargs)
     return wrapped
+
+
+def reshape_square(a):
+    sidelen = int(np.sqrt(a.shape[0]))
+    return a.reshape(sidelen,sidelen)

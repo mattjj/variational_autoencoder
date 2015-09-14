@@ -17,7 +17,7 @@ def make_layer(dot, activation):
 
 
 def compose(layers):
-    return reduce(lambda f,g: lambda h: g(f(h)), layers)
+    return reduce(lambda f,g: lambda h: g(f(h)), layers, lambda x: x)
 
 
 ### initialization
