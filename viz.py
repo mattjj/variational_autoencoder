@@ -127,7 +127,6 @@ def numpy_gaussian_decoder(decoder_params):
     return decode
 
 
-# TODO plot data distribution in latent space?
 def run_interactive(decoder_params, dims):
     zdim = get_zdim(decoder_params)
     decode = numpy_gaussian_decoder(decoder_params)
