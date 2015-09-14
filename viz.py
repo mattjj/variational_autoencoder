@@ -40,13 +40,12 @@ def encode_seq(X, encoder_params):
 
 
 class Interactive(object):
-    def __init__(self, draw_func, init_image, show_coords=False):
+    def __init__(self, draw_func, init_image):
         self.fig, (self.ax, self.imax) = fig, (ax, imax) = \
             plt.subplots(1, 2, figsize=(5, 2.5), facecolor='white')
         self.canvas = canvas = fig.canvas
 
         self.draw_func = draw_func
-        self.show_coords = show_coords
 
         self._init_controlaxis(ax)
         self._init_imageaxis(imax, init_image)
@@ -68,8 +67,6 @@ class Interactive(object):
         self.circle = circle = Circle(
             (0,0), radius=0.05, facecolor='r', animated=True)
         ax.add_patch(circle)
-        self.text_coordinates = ax.text(
-            0, 0, '(0.00, 0.00)', visible=False, fontsize=8, family='monospace')
         self._dragging = False
 
     def _init_imageaxis(self, imax, init_image):
@@ -82,7 +79,6 @@ class Interactive(object):
     def draw(self, event):
         self.background = self.canvas.copy_from_bbox(self.ax.bbox)
         self.ax.draw_artist(self.circle)
-        self.ax.draw_artist(self.text_coordinates)
         self.imax.draw_artist(self.image)
         self.canvas.blit(self.ax.bbox)
         self.canvas.blit(self.imax.bbox)
@@ -109,14 +105,9 @@ class Interactive(object):
 
     def _reposition_circle(self, x, y):
         self.circle.center = x, y
-        if self.show_coords:
-            self.text_coordinates.set_position((x + 0.05, y + 0.05))
-            self.text_coordinates.set_text('(% 3.2f, % 3.2f)' % (x,y))
-            self.text_coordinates.set_visible(True)
 
         self.canvas.restore_region(self.background)
         self.ax.draw_artist(self.circle)
-        self.ax.draw_artist(self.text_coordinates)
         self.canvas.blit(self.ax.bbox)
 
     def _update_image(self, x, y):
