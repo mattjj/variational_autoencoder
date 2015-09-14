@@ -57,12 +57,25 @@ init_gaussian_params = _make_initializer(init_gaussian_decoder)
 #  enoders and decoders  #
 ##########################
 
+
+def unpack_gaussian_params(coder_params):
+    nnet_params, ((W_mu, b_mu), (W_sigma, b_sigma)) = \
+        coder_params[:-2], coder_params[-2:]
+    return nnet_params, (W_mu, b_mu), (W_sigma, b_sigma)
+
+
+def unpack_binary_params(coder_params):
+    nnet_params, (W_out, b_out) = coder_params[:-1], coder_params[-1]
+    return nnet_params, (W_out, b_out)
+
+
 def encoder(encoder_params):
     'a neural net with tanh layers until the final layer,'
     'which generates mu and log_sigmasq separately'
 
-    nnet_params, ((W_mu, b_mu), (W_sigma, b_sigma)) = \
-        encoder_params[:-2], encoder_params[-2:]
+    nnet_params, (W_mu, b_mu), (W_sigma, b_sigma) = \
+        unpack_gaussian_params(encoder_params)
+
     nnet = compose(tanh_layer(W, b) for W, b in nnet_params)
     mu = linear_layer(W_mu, b_mu)
     log_sigmasq = linear_layer(W_sigma, b_sigma)
@@ -89,7 +102,8 @@ def gaussian_decoder(decoder_params):
 def binary_decoder(decoder_params):
     'a neural net with tanh layers until the final sigmoid layer'
 
-    nnet_params, (W_out, b_out) = decoder_params[:-1], decoder_params[-1]
+    nnet_params, (W_out, b_out) = unpack_binary_params(decoder_params)
+
     nnet = compose(tanh_layer(W, b) for W, b in nnet_params)
     Y = sigmoid_layer(W_out, b_out)
 

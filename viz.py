@@ -4,7 +4,9 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
 from matplotlib import cm
 
-from vae import encoder, gaussian_decoder, get_zdim
+from vae import encoder, gaussian_decoder, get_zdim, unpack_gaussian_params
+from nnet import compose, numpy_tanh_layer, numpy_linear_layer
+from util import sigmoid
 
 
 def make_grid(grid_sidelen, imagevecs):
@@ -109,3 +111,31 @@ class Interactive(object):
         self.image.set_data(self.draw_func(x, y))
         self.imax.draw_artist(self.image)
         self.canvas.blit(self.imax.bbox)
+
+
+def numpy_gaussian_decoder(decoder_params):
+    # mostly redundant code with encoder and gaussian_decoder in vae.py
+    nnet_params, (W_mu, b_mu), _ = \
+        unpack_gaussian_params(decoder_params)
+    nnet = compose(numpy_tanh_layer(W, b) for W, b in nnet_params)
+    mu = numpy_linear_layer(W_mu, b_mu)
+
+    def decode(X):
+        return sigmoid(mu(nnet(X)))
+
+    return decode
+
+
+def run_interactive(decoder_params):
+    zdim = get_zdim(decoder_params)
+    decode = numpy_gaussian_decoder(decoder_params)
+    vec = np.zeros(zdim)
+
+    def draw(x, y):
+        vec[:2] = (x,y)
+        return decode(vec).reshape(30,30)  # TODO remove hard-coding
+
+    v = Interactive(draw, draw(0,0))
+    plt.show()
+
+    return v
