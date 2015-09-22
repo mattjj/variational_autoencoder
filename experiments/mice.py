@@ -4,18 +4,17 @@ import logging.config
 logging.config.fileConfig('logging.conf')
 import matplotlib.pyplot as plt
 
-from util import flatten
-from load import load_mice
-from vae import make_gaussian_fitter
-from optimization import sgd, adagrad, rmsprop, adadelta, adam, \
+from vae.util import flatten
+from vae.vae import make_gaussian_fitter
+from vae.optimization import sgd, adagrad, rmsprop, adadelta, adam, \
     momentum_sgd, nesterov
-from viz import sample_grid
+from vae.viz import sample_grid
 
-all_vals = []
+from load import load_mice
 
 
-def monitor_progress(epoch_vals):
-    global decoder_params, all_vals
+def monitor_progress(epoch_vals, all_vals=[]):
+    global decoder_params
 
     def print_first_decoder_weights_spectrum():
         def get_first_decoder_weights(decoder_params):
