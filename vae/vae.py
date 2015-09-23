@@ -56,6 +56,14 @@ init_binary_params = _make_initializer(init_binary_decoder)
 init_gaussian_params = _make_initializer(init_gaussian_decoder)
 
 
+def set_biases_to_data_stats(trX, decoder_params):
+    nnet_params, ((W_mu, b_mu), (W_sigma, b_sigma)) = \
+        decoder_params[:-2], decoder_params[-2:]
+    b_mu.set_value(trX.get_value().mean(0))
+    b_sigma.set_value(np.log(trX.get_value().var(0)))
+    return nnet_params + [(W_mu, b_mu), (W_sigma, b_sigma)]
+
+
 ##########################
 #  enoders and decoders  #
 ##########################
@@ -170,15 +178,6 @@ def make_gaussian_fitter(trX, z_dim, encoder_hdims, decoder_hdims, callback=None
     encoder_params, decoder_params, all_params = \
         init_gaussian_params(x_dim, z_dim, encoder_hdims, decoder_hdims)
     vlb = make_gaussian_objective(encoder_params, decoder_params)
-
-    def set_biases_to_data_stats(trX, decoder_params):
-        nnet_params, ((W_mu, b_mu), (W_sigma, b_sigma)) = \
-            decoder_params[:-2], decoder_params[-2:]
-        b_mu.set_value(trX.get_value().mean(0))
-        b_sigma.set_value(np.log(trX.get_value().var(0)))
-        return nnet_params + [(W_mu, b_mu), (W_sigma, b_sigma)]
-
-    decoder_params = set_biases_to_data_stats(trX, decoder_params)
 
     @argprint
     def fit(num_epochs, minibatch_size, L, optimizer):

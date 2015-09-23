@@ -40,14 +40,14 @@ def encode_seq(X, encoder_params):
 
 
 class Interactive(object):
-    def __init__(self, draw_func, init_image):
+    def __init__(self, draw_func, init_image, limits):
         self.fig, (self.ax, self.imax) = fig, (ax, imax) = \
             plt.subplots(1, 2, figsize=(5, 2.5), facecolor='white')
         self.canvas = canvas = fig.canvas
 
         self.draw_func = draw_func
 
-        self._init_controlaxis(ax)
+        self._init_controlaxis(ax, limits)
         self._init_imageaxis(imax, init_image)
         fig.tight_layout()
 
@@ -59,8 +59,8 @@ class Interactive(object):
 
     ### initialization
 
-    def _init_controlaxis(self, ax):
-        ax.axis([-2,2,-2,2])
+    def _init_controlaxis(self, ax, limits):
+        ax.axis(limits)
         ax.set_xticks([])
         ax.set_yticks([])
         ax.autoscale(False)
@@ -129,7 +129,7 @@ def numpy_gaussian_decoder(decoder_params):
     return decode
 
 
-def run_interactive(decoder_params, dims):
+def run_interactive(decoder_params, dims, limits):
     zdim = get_zdim(decoder_params)
     decode = numpy_gaussian_decoder(decoder_params)
     vec = np.zeros(zdim)
@@ -138,4 +138,4 @@ def run_interactive(decoder_params, dims):
         vec[dims] = (x,y)
         return reshape_square(decode(vec))
 
-    return Interactive(draw, draw(0,0))
+    return Interactive(draw, draw(0,0), limits)
