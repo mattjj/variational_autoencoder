@@ -1,12 +1,15 @@
 import numpy as np
+import matplotlib.pyplot as plt
+import cPickle as pickle
+import gzip
 import logging
 import logging.config
 logging.config.fileConfig('logging.conf')
-import matplotlib.pyplot as plt
 
 from vae.vae import make_gaussian_fitter
 from vae.optimization import sgd, adagrad, rmsprop, adadelta, adam, \
     momentum_sgd, nesterov
+from vae.util import get_ndarrays
 
 from load import load_mice
 
@@ -26,3 +29,7 @@ if __name__ == '__main__':
     fit(10, 500, 1, rmsprop(1e-4))
     fit(25, 500, 1, rmsprop(1e-5))
     fit(25, 1000, 1, rmsprop(1e-5))
+
+    params = get_ndarrays(encoder_params), get_ndarrays(decoder_params)
+    with gzip.open('params.pkl.gz', 'w') as f:
+        pickle.dump(params, f, protocol=-1)

@@ -6,6 +6,7 @@ from itertools import chain
 from functools import wraps
 from inspect import getcallargs, getargspec
 from types import FunctionType
+from operator import methodcaller
 
 
 def floatX(X):
@@ -55,3 +56,14 @@ def argprint(f):
 def reshape_square(a):
     sidelen = int(np.sqrt(a.shape[0]))
     return a.reshape(sidelen,sidelen)
+
+
+def treemap(f,l):
+    if isinstance(l, (list,tuple)):
+        return [treemap(f,_) for _ in l]
+    else:
+        return f(l)
+
+
+def get_ndarrays(params):
+    return treemap(methodcaller('get_value'), params)
