@@ -4,6 +4,7 @@ import numpy.random as npr
 import cPickle as pickle
 import string
 import gzip
+import theano
 
 from vae.vae import make_binary_fitter
 from vae.optimization import adadelta
@@ -13,11 +14,10 @@ from load import load_letters
 
 
 if __name__ == "__main__":
-    logging.info('\n\nStarting experiment!')
     npr.seed(0)
 
     images, labels = load_letters()
-    trX = floatX(images[labels == string.lowercase.index('g')])
+    trX = theano.shared(floatX(images[labels == string.lowercase.index('g')]))
 
     encoder_params, decoder_params, fit = make_binary_fitter(trX, 3, [200], [200])
 

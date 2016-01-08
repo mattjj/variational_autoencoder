@@ -18,3 +18,9 @@ def load_mice(N, permute=True, addnoise=True):
 
 def load_mnist(N):
     raise NotImplementedError
+
+
+def load_letters():
+    datadict = np.load('data/letters.npz')
+    images, labels = datadict['images'], datadict['labels']
+    return images, labels
