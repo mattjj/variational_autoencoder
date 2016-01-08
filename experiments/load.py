@@ -1,4 +1,5 @@
 from __future__ import division
+import string
 import numpy as np
 import theano
 
@@ -20,7 +21,11 @@ def load_mnist(N):
     raise NotImplementedError
 
 
-def load_letters():
+def load_letters(which_letter=None):
     datadict = np.load('data/letters.npz')
     images, labels = datadict['images'], datadict['labels']
-    return images, labels
+
+    if which_letter is not None:
+        images = images[labels == string.lowercase.index(which_letter)]
+
+    return theano.shared(floatX(images)), labels

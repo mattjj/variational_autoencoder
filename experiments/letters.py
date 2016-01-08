@@ -16,8 +16,7 @@ from load import load_letters
 if __name__ == "__main__":
     npr.seed(0)
 
-    images, labels = load_letters()
-    trX = theano.shared(floatX(images[labels == string.lowercase.index('e')]))
+    trX, labels = load_letters('e')
 
     encoder_params, decoder_params, fit = make_binary_fitter(trX, 5, [200], [200])
 
