@@ -7,7 +7,7 @@ import gzip
 import theano
 
 from vae.vae import make_binary_fitter
-from vae.optimization import adadelta
+from vae.optimization import adadelta, rmsprop
 from vae.util import get_ndarrays, floatX
 
 from load import load_letters
@@ -17,12 +17,14 @@ if __name__ == "__main__":
     npr.seed(0)
 
     images, labels = load_letters()
-    trX = theano.shared(floatX(images[labels == string.lowercase.index('g')]))
+    trX = theano.shared(floatX(images[labels == string.lowercase.index('e')]))
 
-    encoder_params, decoder_params, fit = make_binary_fitter(trX, 3, [200], [200])
+    encoder_params, decoder_params, fit = make_binary_fitter(trX, 5, [200], [200])
 
     fit(1, 50, 1, adadelta())
     fit(1, 250, 1, adadelta())
+    fit(400, 50, 1, rmsprop(1e-3))
+    fit(200, 500, 10, rmsprop(1e-4))
 
     params = get_ndarrays(encoder_params), get_ndarrays(decoder_params)
     with gzip.open('letter_params.pkl.gz', 'w') as f:
