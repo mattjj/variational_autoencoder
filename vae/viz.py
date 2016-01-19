@@ -1,5 +1,6 @@
 from __future__ import division
 import numpy as np
+import numpy.random as npr
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
 from matplotlib import cm
@@ -9,29 +10,42 @@ from nnet import compose, numpy_tanh_layer, numpy_linear_layer
 from util import sigmoid, reshape_square
 
 
-def make_grid(grid_sidelen, imagevecs):
-    im_sidelen = int(np.sqrt(imagevecs.shape[1]))
-    shape = 2*(grid_sidelen,) + 2*(im_sidelen,)
+def make_grid(grid_sidelen, imagevecs, imshape):
+    shape = 2*(grid_sidelen,) + imshape
     reshaped = imagevecs.reshape(shape)
 
     return np.vstack(
-        [np.hstack([reshape_square(img) for img in col]) for col in reshaped])
+        [np.hstack([np.reshape(img, imshape) for img in col]) for col in reshaped])
 
 
-def generate_samples(n, decoder_params):
-    zdim = get_zdim(decoder_params)
-    decode = gaussian_decoder(decoder_params)
-    return decode(np.random.randn(n, zdim))[0].eval()
+def sample_grid(sidelen, decoder_params, imshape, decoder=gaussian_decoder):
+    def generate_samples(n, decoder_params):
+        zdim = get_zdim(decoder_params)
+        decode = decoder(decoder_params)
+        vals = decode(npr.randn(n, zdim))
+        return vals[0].eval() if isinstance(vals, tuple) else vals.eval()
 
-
-def sample_grid(sidelen, decoder_params):
     imagevecs = generate_samples(sidelen**2, decoder_params)
-    return make_grid(sidelen, imagevecs)
+    return make_grid(sidelen, imagevecs, imshape)
 
 
-def training_grid(sidelen, trX):
-    imagevecs = np.random.permutation(trX.get_value())[:sidelen**2]
-    return make_grid(sidelen, imagevecs)
+def plot_sample_grid(sidelen, decoder_params, imshape, decoder=gaussian_decoder):
+    plt.matshow(sample_grid(sidelen, decoder_params, imshape, decoder=decoder))
+    ax = plt.gca()
+    xx, yy = imshape
+    ax.set_yticks(np.arange(0, (sidelen+1)*xx, xx) - 0.5)
+    ax.set_xticks(np.arange(0, (sidelen+1)*yy, yy) - 0.5)
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    ax.xaxis.set_ticks_position('none')
+    ax.yaxis.set_ticks_position('none')
+    plt.set_cmap('gray')
+    plt.grid(True, color='w', linestyle='-')
+
+
+def training_grid(sidelen, trX, imshape):
+    imagevecs = npr.permutation(trX.get_value())[:sidelen**2]
+    return make_grid(sidelen, imagevecs, imshape)
 
 
 def encode_seq(X, encoder_params):

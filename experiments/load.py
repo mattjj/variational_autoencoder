@@ -1,5 +1,7 @@
 from __future__ import division
+import string
 import numpy as np
+import cPickle as pickle
 import theano
 
 from util import floatX
@@ -18,3 +20,33 @@ def load_mice(N, permute=True, addnoise=True):
 
 def load_mnist(N):
     raise NotImplementedError
+
+
+def load_letters(which_letter=None):
+    datadict = np.load('data/letters.npz')
+    images, labels = datadict['images'], datadict['labels']
+
+    if which_letter is not None:
+        images = images[labels == string.lowercase.index(which_letter)]
+
+    return theano.shared(floatX(images), borrow=True), labels
+
+
+def load_pendulum(N, permute=True, addnoise=True):
+    with open('data/pendulous.pkl') as infile:
+        images = pickle.load(infile).astype(theano.config.floatX)
+
+    if permute:
+        images = np.random.permutation(images)
+
+    images = images[:N]
+
+    images -= images.min()
+    images /= images.max()
+
+    if addnoise:
+        images += 1e-2*np.random.normal(size=images.shape)
+
+    images = np.reshape(images, (images.shape[0], -1))
+
+    return theano.shared(floatX(images), borrow=True)

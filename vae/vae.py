@@ -178,26 +178,43 @@ def make_gaussian_fitter(trX, z_dim, encoder_hdims, decoder_hdims, callback=None
     encoder_params, decoder_params, all_params = \
         init_gaussian_params(x_dim, z_dim, encoder_hdims, decoder_hdims)
     vlb = make_gaussian_objective(encoder_params, decoder_params)
+    return encoder_params, decoder_params, _make_fitter(vlb, all_params, trX, N, callback)
 
+
+@argprint
+def make_binary_fitter(trX, z_dim, encoder_hdims, decoder_hdims, callback=None):
+    N, x_dim = trX.get_value().shape
+    encoder_params, decoder_params, all_params = \
+        init_binary_params(x_dim, z_dim, encoder_hdims, decoder_hdims)
+    vlb = make_binary_objective(encoder_params, decoder_params)
+    return encoder_params, decoder_params, _make_fitter(vlb, all_params, trX, N, callback)
+
+
+def _make_fitter(vlb, params, trX, N, callback):
     @argprint
     def fit(num_epochs, minibatch_size, L, optimizer):
         num_batches = N // minibatch_size
 
+        # set up cost function and updates
         X = T.matrix('X', dtype=theano.config.floatX)
         cost = -vlb(X, N, minibatch_size, L)
-        updates = optimizer(cost, all_params)
+        updates = optimizer(cost, params)
 
+        # set up minibatch training function
         index = T.lscalar()
         train = theano.function(
             inputs=[index], outputs=cost, updates=updates,
             givens={X: trX[index*minibatch_size:(index+1)*minibatch_size]})
 
+        # run training procedure
         start = time()
         for i in xrange(num_epochs):
             vals = [train(bidx) for bidx in permutation(num_batches)]
             print 'epoch {:>4} of {:>4}: {:> .6}'.format(i+1, num_epochs, np.median(vals[-10:]))
             if callback: callback(vals)
         stop = time()
+
         logging.info('cost {}, {} sec per update, {} sec total\n'.format(
             np.median(vals[-10:]), (stop - start) / N, stop - start))
-    return encoder_params, decoder_params, fit
+
+    return fit
