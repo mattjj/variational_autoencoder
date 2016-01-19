@@ -18,14 +18,14 @@ from load import load_letters
 if __name__ == "__main__":
     npr.seed(0)
 
-    trX, labels = load_letters('e')
+    trX, labels = load_letters('f')
 
     encoder_params, decoder_params, fit = make_binary_fitter(trX, 5, [200], [200])
 
     fit(1, 50, 1, adadelta())
-    fit(1, 250, 1, adadelta())
-    fit(400, 50, 1, rmsprop(1e-3))
-    fit(200, 500, 10, rmsprop(1e-4))
+    fit(3, 250, 1, adadelta())
+    fit(2000, 50, 1, rmsprop(1e-3))
+    fit(2000, 250, 10, rmsprop(1e-4))
 
     params = get_ndarrays(encoder_params), get_ndarrays(decoder_params)
     with gzip.open('letter_params.pkl.gz', 'w') as f:
@@ -33,4 +33,5 @@ if __name__ == "__main__":
 
 
     plot_sample_grid(5, decoder_params, (16, 8), binary_decoder)
+    plt.savefig('letters.png')
     plt.show()
