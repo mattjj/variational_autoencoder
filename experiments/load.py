@@ -9,6 +9,7 @@ from util import floatX
 
 def load_mice(N, permute=True, addnoise=True):
     data = np.load('data/images_for_vae.npy').astype(theano.config.floatX)
+    print data[0].shape
     if permute:
         data = np.random.permutation(data)
     data = data.reshape(data.shape[0], -1)[:N]
