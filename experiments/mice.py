@@ -16,7 +16,7 @@ from load import load_mice
 
 
 def plot():
-    plot_sample_grid(5, decoder_params, (30, 30), gaussian_decoder)
+    plot_sample_grid(10, decoder_params, (30, 30), gaussian_decoder)
     plt.savefig('mice.png')
 
 if __name__ == '__main__':
