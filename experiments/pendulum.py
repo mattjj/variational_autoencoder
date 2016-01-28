@@ -18,6 +18,7 @@ from load import load_pendulum
 def plot():
     plot_sample_grid(5, decoder_params, (21, 21), gaussian_decoder)
     plt.savefig('pendulum.png')
+    print 'saved!'
 
 if __name__ == "__main__":
     npr.seed(0)
@@ -29,13 +30,13 @@ if __name__ == "__main__":
 
     fit(1*500, 50, 1, adadelta())
     plot()
-    fit(25*500, 50, 1, adadelta())
+    fit(10*500, 50, 1, adadelta())
     plot()
-    fit(50*500, 100, 1, rmsprop(1e-4))
+    fit(25*500, 100, 1, rmsprop(1e-4))
     plot()
-    fit(50*500, 100, 1, rmsprop(1e-5))
+    fit(25*500, 100, 1, rmsprop(1e-5))
     plot()
-    fit(50*500, 100, 1, rmsprop(1e-6))
+    fit(25*500, 100, 1, rmsprop(1e-6))
     plot()
 
     params = get_ndarrays(encoder_params), get_ndarrays(decoder_params)

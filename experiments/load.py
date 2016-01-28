@@ -4,12 +4,13 @@ import numpy as np
 import cPickle as pickle
 import theano
 
+from scipy.ndimage.filters import gaussian_filter
+
 from util import floatX
 
 
 def load_mice(N, permute=True, addnoise=True):
     data = np.load('data/images_for_vae.npy').astype(theano.config.floatX)
-    print data[0].shape
     if permute:
         data = np.random.permutation(data)
     data = data.reshape(data.shape[0], -1)[:N]
@@ -35,7 +36,7 @@ def load_letters(which_letter=None):
 
 def load_pendulum(N, permute=True, addnoise=True):
     with open('data/pendulous.pkl') as infile:
-        images = pickle.load(infile).astype(theano.config.floatX)
+        images = gaussian_filter(pickle.load(infile), 0.5).astype(theano.config.floatX)
 
     if permute:
         images = np.random.permutation(images)

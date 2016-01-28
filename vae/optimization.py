@@ -69,7 +69,7 @@ def adam(alpha, beta_1=0.9, beta_2=0.999, epsilon=1e-8):
         grads = T.grad(cost=cost, wrt=params)
         ms = [shared_zeros_like(p) for p in params]
         vs = [shared_zeros_like(p) for p in params]
-        t = theano.shared(floatX(1))
+        t = theano.shared(floatX(1.))
 
         def make_update(p, g, m, v, t):
             m_new = beta_1*m + (1.-beta_1)*g
@@ -79,7 +79,7 @@ def adam(alpha, beta_1=0.9, beta_2=0.999, epsilon=1e-8):
             p_new = p - alpha * mhat / (T.sqrt(vhat) + epsilon)
             return [(m, m_new), (v, v_new), (p, p_new)]
 
-        return [(t, t+1)] + concat(
+        return [(t, t+1.)] + concat(
             make_update(p, g, m, v, t) for p,g,m,v in zip(params, grads, ms, vs))
     return adam
 

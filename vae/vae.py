@@ -81,31 +81,31 @@ def unpack_binary_params(coder_params):
 
 
 def encoder(encoder_params):
-    'a neural net with tanh layers until the final layer,'
-    'which generates mu and log_sigmasq separately'
-
-    nnet_params, (W_mu, b_mu), (W_sigma, b_sigma) = \
+    nnet_params, (W_h, b_h), (W_J, b_J) = \
         unpack_gaussian_params(encoder_params)
 
     nnet = compose(tanh_layer(W, b) for W, b in nnet_params)
-    mu = linear_layer(W_mu, b_mu)
-    log_sigmasq = linear_layer(W_sigma, b_sigma)
+    h = linear_layer(W_h, b_h)
+    log_J = linear_layer(W_J, b_J)
 
     def encode(X):
-        h = nnet(X)
-        return mu(h), log_sigmasq(h)
+        nnet_outputs = nnet(X)
+        return -1./2*T.exp(5.*T.tanh(log_J(nnet_outputs)/5.)), h(nnet_outputs)
 
     return encode
 
 
 def gaussian_decoder(decoder_params):
-    'just like the (gaussian) encoder but means are mapped through a logistic'
+    nnet_params, (W_mu, b_mu), (W_sigma, b_sigma) = \
+        unpack_gaussian_params(decoder_params)
 
-    code = encoder(decoder_params)
+    nnet = compose(tanh_layer(W, b) for W, b in nnet_params)
+    mu = linear_layer(W_mu, b_mu)
+    log_sigmasq = linear_layer(W_sigma, b_sigma)
 
     def decode(Z):
-        mu, log_sigmasq = code(Z)
-        return T.nnet.sigmoid(mu), log_sigmasq
+        nnet_outputs = nnet(Z)
+        return T.nnet.sigmoid(mu(nnet_outputs)), 5.*T.tanh(log_sigmasq(nnet_outputs)/5.)
 
     return decode
 
@@ -142,6 +142,12 @@ def kl_to_prior(mu, log_sigmasq):
     return -0.5*T.sum(1. + log_sigmasq - mu**2. - T.exp(log_sigmasq))
 
 
+def natural_to_mean(natparams):
+     J, h = natparams
+     J = -2.*J
+     return h/J, T.log(1./J)
+
+
 def _make_objective(decoder, loglike):
     def make_objective(encoder_params, decoder_params):
         encode = encoder(encoder_params)
@@ -153,7 +159,7 @@ def _make_objective(decoder, loglike):
                 eps = srng.normal((M, z_dim), dtype=theano.config.floatX)
                 return mu + T.exp(0.5 * log_sigmasq) * eps
 
-            mu, log_sigmasq = encode(X)
+            mu, log_sigmasq = natural_to_mean(encode(X))
             logpxz = sum(loglike(X, decode(sample_z(mu, log_sigmasq)))
                         for l in xrange(L)) / floatX(L)
 
