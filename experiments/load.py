@@ -36,7 +36,7 @@ def load_letters(which_letter=None):
 
 def load_pendulum(N, permute=True, addnoise=True):
     with open('data/pendulous.pkl') as infile:
-        images = gaussian_filter(pickle.load(infile), 0.5).astype(theano.config.floatX)
+        images = gaussian_filter(pickle.load(infile), 0.75).astype(theano.config.floatX)
 
     if permute:
         images = np.random.permutation(images)

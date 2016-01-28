@@ -28,16 +28,19 @@ if __name__ == "__main__":
     encoder_params, decoder_params, fit = \
         make_gaussian_fitter(trX, 3, [200], [200])  # 2 also works well, 1 not quite as well
 
+    # fit(1*500, 50, 1, adam(1e-2))
+    # plot()
+
     fit(1*500, 50, 1, adadelta())
     plot()
-    fit(10*500, 50, 1, adadelta())
+    fit(5*500, 50, 1, adadelta())
     plot()
-    fit(25*500, 100, 1, rmsprop(1e-4))
+    fit(10*500, 100, 1, rmsprop(1e-5))
     plot()
-    fit(25*500, 100, 1, rmsprop(1e-5))
-    plot()
-    fit(25*500, 100, 1, rmsprop(1e-6))
-    plot()
+    # fit(25*500, 100, 1, rmsprop(1e-5))
+    # plot()
+    # fit(25*500, 100, 1, rmsprop(1e-6))
+    # plot()
 
     params = get_ndarrays(encoder_params), get_ndarrays(decoder_params)
     with gzip.open('pendulum_params.pkl.gz', 'w') as f:
