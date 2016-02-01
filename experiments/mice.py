@@ -16,7 +16,7 @@ from load import load_mice
 
 
 def plot():
-    plot_sample_grid(10, decoder_params, (30, 30), gaussian_decoder)
+    plot_sample_grid(6, decoder_params, (30, 30), gaussian_decoder)
     plt.savefig('mice.png')
 
 if __name__ == '__main__':
@@ -24,14 +24,12 @@ if __name__ == '__main__':
     np.random.seed(0)
 
     N = 750000  # 750k is about the memory limit on 3GB GPU
-    trX = load_mice(N)
+    trX = load_mice(N, 'data/sod1-shrunk.npy')
 
     encoder_params, decoder_params, fit = \
         make_gaussian_fitter(trX, 10, [200, 200], [200, 200])
 
     fit(1, 50, 1, adadelta())
-    plot()
-    fit(1, 250, 1, adadelta())
     plot()
     fit(1, 250, 1, adadelta())
     plot()
@@ -47,5 +45,5 @@ if __name__ == '__main__':
     plot()
 
     params = get_ndarrays(encoder_params), get_ndarrays(decoder_params)
-    with gzip.open('mice_params.pkl.gz', 'w') as f:
+    with gzip.open('mice_k2_params.pkl.gz', 'w') as f:
         pickle.dump(params, f, protocol=-1)

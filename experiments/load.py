@@ -9,8 +9,8 @@ from scipy.ndimage.filters import gaussian_filter
 from util import floatX
 
 
-def load_mice(N, permute=True, addnoise=True):
-    data = np.load('data/images_for_vae.npy').astype(theano.config.floatX)
+def load_mice(N, file='data/images_for_vae.npy', permute=True, addnoise=True):
+    data = np.load(file).astype(theano.config.floatX)
     if permute:
         data = np.random.permutation(data)
     data = data.reshape(data.shape[0], -1)[:N]
@@ -18,6 +18,9 @@ def load_mice(N, permute=True, addnoise=True):
     if addnoise:
         data += 1e-3*np.random.normal(size=data.shape)
     return theano.shared(floatX(data), borrow=True)
+
+def load_mice_k2(N, file='data/sod1-shrunk.npy', permute=True, addnoise=True):
+    return load_mice(N, file, permute, addnoise)
 
 
 def load_mnist(N):
