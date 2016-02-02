@@ -24,7 +24,8 @@ if __name__ == '__main__':
     np.random.seed(0)
 
     N = 750000  # 750k is about the memory limit on 3GB GPU
-    trX = load_mice(N, 'data/sod1-shrunk.npy')
+    # trX = load_mice(N, 'data/sod1-shrunk.npy')
+    trX = load_mice(N, 'data/sod1-new-shrunk.npy')
 
     encoder_params, decoder_params, fit = \
         make_gaussian_fitter(trX, 10, [200], [200])
@@ -43,29 +44,29 @@ if __name__ == '__main__':
     with gzip.open('mice_k2_params.pkl.gz', 'w') as f:
         pickle.dump(params, f, protocol=-1)
 
-    # making a reconstructed dataset
-    from vae.vae import natural_to_mean
-    X = np.load('data/sod1-shrunk.npy')
-    X = X.reshape(X.shape[0], -1)
-    X /= X.max()
+    # # making a reconstructed dataset
+    # from vae.vae import natural_to_mean
+    # X = np.load('data/sod1-shrunk.npy')
+    # X = X.reshape(X.shape[0], -1)
+    # X /= X.max()
 
-    encode = encoder(encoder_params)
-    decode = gaussian_decoder(decoder_params)
-    def reconstruct(x):
-        return decode(natural_to_mean(encode(x))[0])[0].eval()
-    Xtilde = np.vstack(map(reconstruct, np.array_split(X, 1000)))
-    np.save('data/sod1-reconstructed.npy', Xtilde)
-    print 'done!'
+    # encode = encoder(encoder_params)
+    # decode = gaussian_decoder(decoder_params)
+    # def reconstruct(x):
+    #     return decode(natural_to_mean(encode(x))[0])[0].eval()
+    # Xtilde = np.vstack(map(reconstruct, np.array_split(X, 1000)))
+    # np.save('data/sod1-reconstructed.npy', Xtilde)
+    # print 'done!'
 
-    # comparing versions
-    from vae.viz import make_grid
-    def compare(sidelen=10, seed=0):
-        idx = np.random.RandomState(seed).choice(X.shape[0], size=sidelen**2, replace=False)
+    # # comparing versions
+    # from vae.viz import make_grid
+    # def compare(X, Y, sidelen=10, seed=0):
+    #     idx = np.random.RandomState(seed).choice(X.shape[0], size=sidelen**2, replace=False)
 
-        def plot(Y, filename):
-            plt.matshow(make_grid(sidelen, Y[idx], (30, 30)))
-            plt.savefig(filename)
-            plt.close()
+    #     def plot(Z, filename):
+    #         plt.matshow(make_grid(sidelen, Z[idx], (30, 30)))
+    #         plt.savefig(filename)
+    #         plt.close()
 
-        plot(X, 'orig.png')
-        plot(Xtilde, 'reconstructed.png')
+    #     plot(X, 'orig.png')
+    #     plot(Y, 'reconstructed.png')
