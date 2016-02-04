@@ -30,15 +30,15 @@ if __name__ == '__main__':
     encoder_params, decoder_params, fit = \
         make_gaussian_fitter(trX, 10, [200], [200], callback=plot)
 
-    fit(1, 50, 1, adadelta())
-    fit(10, 250, 1, adadelta())
-    fit(50, 250, 1, rmsprop(1e-4))
-    fit(50, 250, 1, rmsprop(1e-5))
-    fit(50, 250, 1, rmsprop(1e-6))
+    # fit(10, 50, 1, adadelta())
+    # fit(10, 250, 1, adadelta())
+    # fit(50, 250, 1, rmsprop(1e-4))
+    # fit(50, 250, 1, rmsprop(1e-5))
+    # fit(50, 250, 1, rmsprop(1e-6))
 
-    params = get_ndarrays(encoder_params), get_ndarrays(decoder_params)
-    with gzip.open('mice_k2_params.pkl.gz', 'w') as f:
-        pickle.dump(params, f, protocol=-1)
+    # params = get_ndarrays(encoder_params), get_ndarrays(decoder_params)
+    # with gzip.open('data/mice_k2_params.pkl.gz', 'w') as f:
+    #     pickle.dump(params, f, protocol=-1)
 
     # # making a reconstructed dataset
     # from vae.vae import natural_to_mean

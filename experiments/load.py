@@ -3,16 +3,22 @@ import string
 import numpy as np
 import cPickle as pickle
 import theano
+import h5py
 
 from scipy.ndimage.filters import gaussian_filter
 
 from util import floatX
 
 
-def load_mice(N, file='data/images_for_vae.npy', permute=True, addnoise=True):
+def load_mice(N, file='data/images_for_vae.npy', chunksize=None, addnoise=True):
     data = np.load(file).astype(theano.config.floatX)
-    if permute:
+    if chunksize is None:
         data = np.random.permutation(data)
+    else:
+        num_chunks = data.shape[0] // chunksize
+        data = data[:chunksize*num_chunks]
+        data = np.concatenate(npr.permutation(np.split(data, num_chunks))[:N // chunksize])
+
     data = data.reshape(data.shape[0], -1)[:N]
     data -= data.min()
     data /= data.max()
@@ -21,8 +27,8 @@ def load_mice(N, file='data/images_for_vae.npy', permute=True, addnoise=True):
     print 'loaded %d frames from %s' % (data.shape[0], file)
     return theano.shared(floatX(data), borrow=True)
 
-def load_mice_k2(N, file='data/sod1-shrunk.npy', permute=True, addnoise=True):
-    return load_mice(N, file, permute, addnoise)
+def load_mice_k2(N, file='data/sod1-shrunk.npy', *args, **kwargs):
+    return load_mice(N, file, *args, **kwargs)
 
 
 def load_mnist(N):
