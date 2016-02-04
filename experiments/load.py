@@ -63,3 +63,25 @@ def load_pendulum(N, permute=True, addnoise=True):
     images = np.reshape(images, (images.shape[0], -1))
 
     return theano.shared(floatX(images), borrow=True)
+
+
+def load_birds(N, file='data/birds/lhp33_2012-07-24/stft_features.mat', addnoise=True, permute=True):
+    with h5py.File(file) as f:
+        mat = np.asarray(f['stft']['mat'])
+    cmat = mat['real'] + mat['imag']*1j
+
+    if permute:
+        cmat = np.random.permutation(cmat)
+
+    images = np.clip(20. * np.log10(np.abs(cmat[:N])), -30, 20)
+
+    images -= images.min()
+    images /= images.max()
+
+    if addnoise:
+        images += 1e-3 * npr.randn(*images.shape)
+
+    # trials x time x freqs
+    images = np.reshape(images, (-1, images.shape[-1]))
+
+    return theano.shared(floatX(images), borrow=True)
