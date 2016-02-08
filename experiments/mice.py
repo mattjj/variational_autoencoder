@@ -15,35 +15,28 @@ from vae.viz import plot_sample_grid
 from load import load_mice
 
 
-def plot():
+def plot(*args):
     plot_sample_grid(6, decoder_params, (30, 30), gaussian_decoder)
     plt.savefig('mice.png')
+    plt.close()
 
 if __name__ == '__main__':
     logging.info('\n\nStarting experiment!')
     np.random.seed(0)
 
     N = 750000  # 750k is about the memory limit on 3GB GPU
-    trX = load_mice(N, 'data/sod1-shrunk.npy')
+    # trX = load_mice(N, 'data/sod1-shrunk.npy')
+    trX = load_mice(N, 'data/sod1-newest.npy')
 
     encoder_params, decoder_params, fit = \
-        make_gaussian_fitter(trX, 10, [200, 200], [200, 200])
+        make_gaussian_fitter(trX, 5, [200, 200], [200, 200], callback=plot)
 
     fit(1, 50, 1, adadelta())
-    plot()
-    fit(1, 250, 1, adadelta())
-    plot()
-    fit(10, 250, 1, rmsprop(1e-4))
-    plot()
-    fit(25, 250, 1, rmsprop(1e-5))
-    plot()
+    fit(10, 50, 1, adadelta())
+    fit(1, 250, 1, rmsprop(1e-4))
     fit(25, 250, 1, rmsprop(5e-6))
-    plot()
-
-    # could do without this one
-    fit(25, 250, 1, rmsprop(1e-6))
-    plot()
+    fit(25, 1000, 1, rmsprop(1e-6))
 
     params = get_ndarrays(encoder_params), get_ndarrays(decoder_params)
-    with gzip.open('mice_k2_params.pkl.gz', 'w') as f:
+    with gzip.open('mice_k2_params_tanh10.pkl.gz', 'w') as f:
         pickle.dump(params, f, protocol=-1)

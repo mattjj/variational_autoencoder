@@ -80,7 +80,7 @@ def unpack_binary_params(coder_params):
     return nnet_params, (W_out, b_out)
 
 
-def encoder(encoder_params):
+def encoder(encoder_params, tanh_scale=10.):
     nnet_params, (W_h, b_h), (W_J, b_J) = \
         unpack_gaussian_params(encoder_params)
 
@@ -90,12 +90,13 @@ def encoder(encoder_params):
 
     def encode(X):
         nnet_outputs = nnet(X)
-        return -1./2*T.exp(5.*T.tanh(log_J(nnet_outputs)/5.)), h(nnet_outputs)
+        J = -1./2 * T.exp(tanh_scale * T.tanh(log_J(nnet_outputs) / tanh_scale))
+        return J, h(nnet_outputs)
 
     return encode
 
 
-def gaussian_decoder(decoder_params):
+def gaussian_decoder(decoder_params, tanh_scale=10.):
     nnet_params, (W_mu, b_mu), (W_sigma, b_sigma) = \
         unpack_gaussian_params(decoder_params)
 
@@ -105,7 +106,8 @@ def gaussian_decoder(decoder_params):
 
     def decode(Z):
         nnet_outputs = nnet(Z)
-        return T.nnet.sigmoid(mu(nnet_outputs)), 5.*T.tanh(log_sigmasq(nnet_outputs)/5.)
+        log_sigmasq_clipped = tanh_scale * T.tanh(log_sigmasq(nnet_outputs) / tanh_scale)
+        return T.nnet.sigmoid(mu(nnet_outputs)), log_sigmasq_clipped
 
     return decode
 
@@ -161,7 +163,7 @@ def _make_objective(decoder, loglike):
 
             mu, log_sigmasq = natural_to_mean(encode(X))
             logpxz = sum(loglike(X, decode(sample_z(mu, log_sigmasq)))
-                        for l in xrange(L)) / floatX(L)
+                        for l in xrange(L)) / floatX(L)  # TODO vectorize this
 
             minibatch_val = -kl_to_prior(mu, log_sigmasq) + logpxz
 

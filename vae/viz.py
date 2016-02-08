@@ -29,6 +29,32 @@ def sample_grid(sidelen, decoder_params, imshape, decoder=gaussian_decoder):
     return make_grid(sidelen, imagevecs, imshape)
 
 
+def regular_grid(sidelen, decoder_params, imshape, limits=[-2,2,-2,2], axes=None,
+                 corners=None, rand_scale=1., seed=None, decoder=gaussian_decoder):
+    rng = npr if seed is None else npr.RandomState(seed=seed)
+    zdim = get_zdim(decoder_params)
+
+    if axes is not None:
+        x0, x1, y0, y1 = limits
+        x0, x1 = x0 * np.eye(zdim)[axes[0]], x1 * np.eye(zdim)[axes[0]]
+        y0, y1 = y0 * np.eye(zdim)[axes[1]], y1 * np.eye(zdim)[axes[1]]
+    elif corners is None:
+        corners = rand_scale * rng.randn(4, zdim)
+    x0, x1, y0, y1 = corners
+
+    def regular_grid(zdim):
+        return np.vstack([(1-t)*x0 + t*x1 + (1-s)*y0 + s*y1
+                          for t in np.linspace(0, 1, sidelen, endpoint=True)
+                          for s in np.linspace(0, 1, sidelen, endpoint=True)])
+
+    decode = decoder(decoder_params)
+    grid = regular_grid(zdim)
+    vals = decode(grid)
+    imagevecs = vals[0].eval() if isinstance(vals, tuple) else vals.eval()
+
+    return make_grid(sidelen, imagevecs, imshape)
+
+
 def plot_sample_grid(sidelen, decoder_params, imshape, decoder=gaussian_decoder):
     plt.matshow(sample_grid(sidelen, decoder_params, imshape, decoder=decoder))
     ax = plt.gca()

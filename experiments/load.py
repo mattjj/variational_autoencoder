@@ -17,6 +17,7 @@ def load_mice(N, file='data/images_for_vae.npy', permute=True, addnoise=True):
     data /= data.max()
     if addnoise:
         data += 1e-3*np.random.normal(size=data.shape)
+    print 'loaded from {}'.format(file)
     return theano.shared(floatX(data), borrow=True)
 
 def load_mice_k2(N, file='data/sod1-shrunk.npy', permute=True, addnoise=True):
