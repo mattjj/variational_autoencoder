@@ -5,6 +5,7 @@ import gzip
 import logging
 import logging.config
 logging.config.fileConfig('logging.conf')
+from scipy.signal import medfilt
 
 from vae.vae import make_gaussian_fitter, gaussian_decoder
 from vae.optimization import sgd, adagrad, rmsprop, adadelta, adam, \
@@ -15,9 +16,13 @@ from vae.viz import plot_sample_grid
 from load import load_mice
 
 
-def plot(*args):
+def plot(vals):
     plot_sample_grid(6, decoder_params, (30, 30), gaussian_decoder)
     plt.savefig('mice.png')
+    plt.close()
+
+    plt.plot(medfilt(vals, 101)[:-50])
+    plt.savefig('training_progress_this_epoch.png')
     plt.close()
 
 if __name__ == '__main__':
@@ -34,8 +39,8 @@ if __name__ == '__main__':
     fit(1, 50, 1, adadelta())
     fit(10, 50, 1, adadelta())
     fit(1, 250, 1, rmsprop(1e-4))
-    fit(25, 250, 1, rmsprop(5e-6))
-    fit(25, 1000, 1, rmsprop(1e-6))
+    fit(25, 250, 1, rmsprop(1e-6))
+    fit(25, 2000, 1, rmsprop(1e-7))
 
     params = get_ndarrays(encoder_params), get_ndarrays(decoder_params)
     with gzip.open('mice_k2_params_tanh10.pkl.gz', 'w') as f:
