@@ -80,7 +80,7 @@ def unpack_binary_params(coder_params):
     return nnet_params, (W_out, b_out)
 
 
-def encoder(encoder_params, tanh_scale=10.):
+def encoder(encoder_params, tanh_scale):
     nnet_params, (W_h, b_h), (W_J, b_J) = \
         unpack_gaussian_params(encoder_params)
 
@@ -90,13 +90,13 @@ def encoder(encoder_params, tanh_scale=10.):
 
     def encode(X):
         nnet_outputs = nnet(X)
-        J = -1./2 * T.exp(tanh_scale * T.tanh(log_J(nnet_outputs) / tanh_scale) + 1.)
+        J = -1./2 * T.exp(tanh_scale * T.tanh(log_J(nnet_outputs) / tanh_scale))
         return J, h(nnet_outputs)
 
     return encode
 
 
-def gaussian_decoder(decoder_params, tanh_scale=10.):
+def gaussian_decoder(decoder_params, tanh_scale):
     nnet_params, (W_mu, b_mu), (W_sigma, b_sigma) = \
         unpack_gaussian_params(decoder_params)
 
@@ -112,7 +112,7 @@ def gaussian_decoder(decoder_params, tanh_scale=10.):
     return decode
 
 
-def binary_decoder(decoder_params):
+def binary_decoder(decoder_params, tanh_scale):
     'a neural net with tanh layers until the final sigmoid layer'
 
     nnet_params, (W_out, b_out) = unpack_binary_params(decoder_params)
@@ -151,9 +151,9 @@ def natural_to_mean(natparams):
 
 
 def _make_objective(decoder, loglike):
-    def make_objective(encoder_params, decoder_params):
-        encode = encoder(encoder_params)
-        decode = decoder(decoder_params)
+    def make_objective(encoder_params, decoder_params, tanh_scale):
+        encode = encoder(encoder_params, tanh_scale)
+        decode = decoder(decoder_params, tanh_scale)
         z_dim = get_zdim(decoder_params)
 
         def vlb(X, N, M, L):
@@ -181,20 +181,20 @@ make_binary_objective = _make_objective(binary_decoder, binary_loglike)
 #############
 
 @argprint
-def make_gaussian_fitter(trX, z_dim, encoder_hdims, decoder_hdims, callback=None):
+def make_gaussian_fitter(trX, z_dim, encoder_hdims, decoder_hdims, tanh_scale, callback=None):
     N, x_dim = trX.get_value().shape
     encoder_params, decoder_params, all_params = \
         init_gaussian_params(x_dim, z_dim, encoder_hdims, decoder_hdims)
-    vlb = make_gaussian_objective(encoder_params, decoder_params)
+    vlb = make_gaussian_objective(encoder_params, decoder_params, tanh_scale)
     return encoder_params, decoder_params, _make_fitter(vlb, all_params, trX, N, callback)
 
 
 @argprint
-def make_binary_fitter(trX, z_dim, encoder_hdims, decoder_hdims, callback=None):
+def make_binary_fitter(trX, z_dim, encoder_hdims, decoder_hdims, tanh_scale, callback=None):
     N, x_dim = trX.get_value().shape
     encoder_params, decoder_params, all_params = \
         init_binary_params(x_dim, z_dim, encoder_hdims, decoder_hdims)
-    vlb = make_binary_objective(encoder_params, decoder_params)
+    vlb = make_binary_objective(encoder_params, decoder_params, tanh_scale)
     return encoder_params, decoder_params, _make_fitter(vlb, all_params, trX, N, callback)
 
 
