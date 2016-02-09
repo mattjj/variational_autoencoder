@@ -66,4 +66,5 @@ def treemap(f,l):
 
 
 def get_ndarrays(params):
-    return treemap(methodcaller('get_value'), params)
+    get_value = lambda x: x if isinstance(x, np.ndarray) else x.get_value()
+    return treemap(get_value, params)

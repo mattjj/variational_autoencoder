@@ -18,14 +18,24 @@ def make_grid(grid_sidelen, imagevecs, imshape):
         [np.hstack([np.reshape(img, imshape) for img in col]) for col in reshaped])
 
 
-def sample_grid(sidelen, decoder_params, imshape, decoder=gaussian_decoder):
-    def generate_samples(n, decoder_params):
-        zdim = get_zdim(decoder_params)
-        decode = decoder(decoder_params)
-        vals = decode(npr.randn(n, zdim))
-        return vals[0].eval() if isinstance(vals, tuple) else vals.eval()
+def plot_sample_grid(sidelen, imshape, samplefn):
+    grid = make_grid(sidelen, samplefn(sidelen**2), imshape)
 
-    imagevecs = generate_samples(sidelen**2, decoder_params)
+    plt.matshow(grid)
+    ax = plt.gca()
+    xx, yy = imshape
+    ax.set_yticks(np.arange(0, (sidelen+1)*xx, xx) - 0.5)
+    ax.set_xticks(np.arange(0, (sidelen+1)*yy, yy) - 0.5)
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    ax.xaxis.set_ticks_position('none')
+    ax.yaxis.set_ticks_position('none')
+    plt.set_cmap('gray')
+    plt.grid(True, color='w', linestyle='-')
+
+
+def training_grid(sidelen, trX, imshape):
+    imagevecs = npr.permutation(trX.get_value())[:sidelen**2]
     return make_grid(sidelen, imagevecs, imshape)
 
 
@@ -53,30 +63,6 @@ def regular_grid(sidelen, decoder_params, imshape, limits=[-2,2,-2,2], axes=None
     imagevecs = vals[0].eval() if isinstance(vals, tuple) else vals.eval()
 
     return make_grid(sidelen, imagevecs, imshape)
-
-
-def plot_sample_grid(sidelen, decoder_params, imshape, decoder=gaussian_decoder):
-    plt.matshow(sample_grid(sidelen, decoder_params, imshape, decoder=decoder))
-    ax = plt.gca()
-    xx, yy = imshape
-    ax.set_yticks(np.arange(0, (sidelen+1)*xx, xx) - 0.5)
-    ax.set_xticks(np.arange(0, (sidelen+1)*yy, yy) - 0.5)
-    ax.set_xticklabels([])
-    ax.set_yticklabels([])
-    ax.xaxis.set_ticks_position('none')
-    ax.yaxis.set_ticks_position('none')
-    plt.set_cmap('gray')
-    plt.grid(True, color='w', linestyle='-')
-
-
-def training_grid(sidelen, trX, imshape):
-    imagevecs = npr.permutation(trX.get_value())[:sidelen**2]
-    return make_grid(sidelen, imagevecs, imshape)
-
-
-def encode_seq(X, encoder_params):
-    encode = encoder(encoder_params)
-    return encode(X)[0].eval()
 
 
 class Interactive(object):
