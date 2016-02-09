@@ -90,7 +90,7 @@ def encoder(encoder_params, tanh_scale=10.):
 
     def encode(X):
         nnet_outputs = nnet(X)
-        J = -1./2 * T.exp(tanh_scale * T.tanh(log_J(nnet_outputs) / tanh_scale))
+        J = -1./2 * T.exp(tanh_scale * T.tanh(log_J(nnet_outputs) / tanh_scale) + 1.)
         return J, h(nnet_outputs)
 
     return encode

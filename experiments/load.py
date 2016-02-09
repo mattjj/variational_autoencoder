@@ -14,14 +14,12 @@ def load_mice(N, file='data/images_for_vae.npy', permute=True, addnoise=True):
     if permute:
         data = np.random.permutation(data)
     data = data.reshape(data.shape[0], -1)[:N]
+    data -= data.min()
     data /= data.max()
     if addnoise:
         data += 1e-3*np.random.normal(size=data.shape)
     print 'loaded from {}'.format(file)
     return theano.shared(floatX(data), borrow=True)
-
-def load_mice_k2(N, file='data/sod1-shrunk.npy', permute=True, addnoise=True):
-    return load_mice(N, file, permute, addnoise)
 
 
 def load_mnist(N):

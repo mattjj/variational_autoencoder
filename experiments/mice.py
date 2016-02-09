@@ -40,6 +40,8 @@ def conditional_sampler(encoder_params, decoder_params, data):
     return sample
 
 
+saved = lambda: None
+saved.epoch = 0
 def plot(vals):
     tic = time()
 
@@ -54,8 +56,9 @@ def plot(vals):
     plt.close()
 
     plt.plot(medfilt(vals, 101)[:-50])
-    plt.savefig('training_progress_this_epoch.png')
+    plt.savefig('training_progress_{}.png'.format(saved.epoch))
     plt.close()
+    saved.epoch += 1
 
     print 'plotting took {} sec'.format(time() - tic)
 
@@ -71,10 +74,9 @@ if __name__ == '__main__':
         make_gaussian_fitter(trX, 10, [200, 200], [200, 200], callback=plot)
 
     fit(1, 50, 1, adadelta())
-    fit(1, 250, 1, adadelta())
-    fit(1, 250, 1, rmsprop(1e-4))
-    # fit(25, 250, 1, rmsprop(1e-6))
-    # fit(25, 2000, 1, rmsprop(1e-7))
+    fit(3, 250, 1, adadelta())
+    fit(3, 250, 1, rmsprop(1e-4))
+    fit(10, 1000, 1, rmsprop(1e-5))
 
     params = get_ndarrays(encoder_params), get_ndarrays(decoder_params)
     with gzip.open('temp.pkl.gz', 'w') as f:
