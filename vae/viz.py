@@ -155,6 +155,22 @@ def numpy_gaussian_decoder(decoder_params):
     return decode
 
 
+def numpy_encoder(encoder_params, tanh_scale):
+    # mostly redundant code with encoder in vae.py
+    nnet_params, (W_h, b_h), (W_J, b_J) = \
+        unpack_gaussian_params(encoder_params)
+
+    nnet = compose(numpy_tanh_layer(W, b) for W, b in nnet_params)
+    h = numpy_linear_layer(W_h, b_h)
+    log_J = numpy_linear_layer(W_J, b_J)
+
+    def encode(X):
+        nnet_outputs = nnet(X)
+        J = -1./2 * np.exp(tanh_scale * np.tanh(log_J(nnet_outputs) / tanh_scale))
+        return J, h(nnet_outputs)
+
+    return encode
+
 def run_interactive(decoder_params, dims, limits):
     zdim = get_zdim(decoder_params)
     decode = numpy_gaussian_decoder(decoder_params)

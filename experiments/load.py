@@ -2,15 +2,25 @@ from __future__ import division
 import string
 import numpy as np
 import cPickle as pickle
+import gzip
 import theano
 
 from scipy.ndimage.filters import gaussian_filter
 
 from util import floatX
 
+def load(filename):
+    if filename.endswith('.npy'):
+        return np.load(filename)
+    else:
+        openfile = open if filename.endswith('.pkl') else gzip.open
+        with openfile(filename, 'r') as infile:
+            datadict = pickle.load(infile)
+        return np.concatenate(datadict.values())
+
 
 def load_mice(N, file='data/images_for_vae.npy', permute=True, addnoise=True):
-    data = np.load(file).astype(theano.config.floatX)
+    data = load(file).astype(theano.config.floatX)
     if permute:
         data = np.random.permutation(data)
     data = data.reshape(data.shape[0], -1)[:N]

@@ -50,7 +50,7 @@ def plot_training_progress(ys):
 
     fig, (ax1, ax2) = plt.subplots(2, 1)
     lines = [ax1.plot(x, y) for x, y in zip(xs, ys)]
-    ax1.set_ylim(np.min(y), np.percentile(ys[0], 95.))
+    ax1.set_ylim(np.min(y), np.percentile(ys[0], 90.))
 
     ax2.plot(xs[-1], ys[-1], lines[-1][-1].get_color())
     ax2.plot(xs[-1][12:-12], medfilt(ys[-1], 25)[12:-12], 'k')
@@ -81,13 +81,22 @@ def plot(vals):
 
     print 'plotting took {} sec'.format(time() - tic)
 
+def save(encoder_params, decoder_params):
+    params = get_ndarrays(encoder_params), get_ndarrays(decoder_params)
+    with gzip.open('vae_params.pkl.gz', 'w') as f:
+        pickle.dump(params, f, protocol=-1)
+        print 'saved!'
+
 if __name__ == '__main__':
     logging.info('\n\nStarting experiment!')
     np.random.seed(0)
 
     N = 750000  # 750k is about the memory limit on 3GB GPU
-    trX = load_mice(N, 'data/sod1-shrunk.npy')
+    # trX = load_mice(N, 'data/sod1-shrunk.npy')
     # trX = load_mice(N, 'data/sod1-newest.npy')
+    # trX = load_mice(N, 'data/new-dawn-corrected-shrunk.npy')
+    # trX = load_mice(N, 'data/new-dawn-corrected-shrunk2.pkl.gz')
+    trX = load_mice(N, 'data/new-dawn-corrected-shrunk3.pkl.gz')
     tanh_scale = 10.
 
     encoder_params, decoder_params, fit = make_gaussian_fitter(
@@ -95,10 +104,24 @@ if __name__ == '__main__':
 
     fit(1, 50, 1, adadelta())
     fit(1, 250, 1, adadelta())
-    fit(10, 250, 1, rmsprop(1e-4))
-    fit(10, 500, 1, rmsprop(1e-5))
-    fit(10, 500, 1, rmsprop(1e-6))
+    fit(3, 250, 1, adam(1e-3))
+    save(encoder_params, decoder_params)
+    fit(10, 500, 1, adam(5e-4))
+    save(encoder_params, decoder_params)
+    fit(200, 500, 1, adam(1e-4))
+    save(encoder_params, decoder_params)
+    fit(500, 1000, 1, adam(5e-5))
+    save(encoder_params, decoder_params)
+    fit(250, 2000, 1, adam(5e-6))
+    save(encoder_params, decoder_params)
+    fit(250, 2000, 1, adam(1e-6))
+    save(encoder_params, decoder_params)
 
-    params = get_ndarrays(encoder_params), get_ndarrays(decoder_params)
-    with gzip.open('temp.pkl.gz', 'w') as f:
-        pickle.dump(params, f, protocol=-1)
+    # fit(10, 250, 1, rmsprop(1e-4))
+    # fit(1, 250, 1, rmsprop(1e-5))
+    # fit(1, 250, 1, rmsprop(1e-6))
+
+    # TODO try single hidden layer, probably much easier to train
+    # actually not any easier to train? taking comparably long, forward
+    # generated mice look a bit funny (though conditional ones look great)
+    # maybe it was the dataset? try switching back to 2 (from 3)
