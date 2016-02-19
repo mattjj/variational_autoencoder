@@ -97,24 +97,22 @@ if __name__ == '__main__':
     # trX = load_mice(N, 'data/new-dawn-corrected-shrunk.npy')
     # trX = load_mice(N, 'data/new-dawn-corrected-shrunk2.pkl.gz')
     trX = load_mice(N, 'data/new-dawn-corrected-shrunk3.pkl.gz')
-    tanh_scale = 10.
+    tanh_scale = 7.
 
     encoder_params, decoder_params, fit = make_gaussian_fitter(
             trX, 10, [200, 200], [200, 200], tanh_scale=tanh_scale, callback=plot)
 
     fit(1, 50, 1, adadelta())
     fit(1, 250, 1, adadelta())
-    fit(3, 250, 1, adam(1e-3))
+    fit(15, 250, 1, adam(1e-3))
     save(encoder_params, decoder_params)
-    fit(10, 500, 1, adam(5e-4))
+    fit(25, 500, 1, adam(5e-4))
     save(encoder_params, decoder_params)
-    fit(200, 500, 1, adam(1e-4))
+    fit(50, 1000, 1, adam(5e-5))
     save(encoder_params, decoder_params)
-    fit(500, 1000, 1, adam(5e-5))
+    fit(50, 1000, 1, adam(1e-5))
     save(encoder_params, decoder_params)
     fit(250, 2000, 1, adam(5e-6))
-    save(encoder_params, decoder_params)
-    fit(250, 2000, 1, adam(1e-6))
     save(encoder_params, decoder_params)
 
     # fit(10, 250, 1, rmsprop(1e-4))
