@@ -118,7 +118,5 @@ if __name__ == '__main__':
     save(encoder_params, decoder_params)
     fit(200, 500, 1, adam(5e-5))
     save(encoder_params, decoder_params)
-    fit(200, 500, 1, adam(1e-5))
-    save(encoder_params, decoder_params)
-    fit(200, 500, 1, adam(5e-6))
+    fit(25, 500, 1, adam(1e-5))
     save(encoder_params, decoder_params)

@@ -12,8 +12,8 @@ from util import floatX
 
 def load(filename):
     def standardize(d):
-        recenter = lambda d: d - np.percentile(d, 1.)
-        rescale = lambda d: d / np.percentile(d, 99.)
+        recenter = lambda d: d - np.percentile(d, 0.01)
+        rescale = lambda d: d / np.percentile(d, 99.99)
         return rescale(recenter(d))
 
     if filename.endswith('.npy'):
