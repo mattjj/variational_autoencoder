@@ -17,14 +17,15 @@ def load_data(filename):
         with gzip.open(filename, 'r') as infile:
             datadict = pickle.load(infile)
         mices = np.concatenate(datadict.values())
+    # TODO normalize each instead of normalize all
     mices -= mices.min()
     mices /= mices.max()
     return partial_flatten(mices)
 
 def load_params(filename):
     with gzip.open(filename, 'r') as infile:
-        encoder_params, decoder_params = pickle.load(infile)
-    return encoder_params, decoder_params
+        tup = pickle.load(infile)
+    return tup
 
 def cov(X):
     X = X - X.mean(0)
@@ -106,15 +107,18 @@ def make_plotter(encode, mices):
 
 if __name__ == "__main__":
     # mices = load_data('data/new-dawn-corrected-shrunk.npy')
-    mices = load_data('data/new-dawn-corrected-shrunk3.pkl.gz')
-    encoder_params, _ = load_params('vae_params.pkl.gz')
+    mices = load_data('data/new-dawn-corrected-shrunk3.pkl.gz')[:200000:2]
+    # encoder_params, _ = load_params('vae_params.pkl.gz')
+    # encoder_params, _ = load_params('best_init.pkl.gz')
+    # _, _, encoder_params = load_params('../svae/lds_svae_params_vaeinit.pkl.gz')
+    _, _, encoder_params = load_params('../svae/lds_svae_params_noinit.pkl.gz')
 
     encode = encoder(encoder_params, 7.)
     plot, plot_flat, plot_pca, pairplot = make_plotter(encode, mices)
 
-#     plot(500, 1000)
-#     plot_flat(0, 20000, alpha=0.1)
-#     plot_pca(0, 20000, alpha=0.1)
+    plot(500, 1000)
+    plot_flat(0, 20000, alpha=0.1)
+    plot_pca(0, 20000, alpha=0.1)
 
     pairplot(0, 36000, which='vae', color='b', cmap=plt.cm.Blues)
     pairplot(0, 36000, which='pca', color='r', cmap=plt.cm.Reds)
