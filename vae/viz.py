@@ -4,11 +4,51 @@ import numpy.random as npr
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
 from matplotlib import cm
+from matplotlib.colors import LinearSegmentedColormap
 
-from vae import encoder, gaussian_decoder, get_zdim, unpack_gaussian_params
 from nnet import compose, numpy_tanh_layer, numpy_linear_layer
 from util import sigmoid, reshape_square
 
+
+#####################
+#  encoder/decoder  #
+#####################
+
+get_zdim = lambda decoder_params: decoder_params[0][0].shape[0]
+
+
+def gaussian_decoder(decoder_params):
+    # mostly redundant code with encoder and gaussian_decoder in vae.py
+    nnet_params, (W_mu, b_mu) = decoder_params[:-2], decoder_params[-2]
+    nnet = compose(numpy_tanh_layer(W, b) for W, b in nnet_params)
+    mu = numpy_linear_layer(W_mu, b_mu)
+
+    def decode(X):
+        return sigmoid(mu(nnet(X)))
+
+    return decode
+
+
+def encoder(encoder_params, tanh_scale):
+    # mostly redundant code with encoder and gaussian_decoder in vae.py
+    nnet_params, (W_h, b_h), (W_J, b_J) = \
+        encoder_params[:-2], encoder_params[-2], encoder_params[-1]
+
+    nnet = compose(numpy_tanh_layer(W, b) for W, b in nnet_params)
+    h = numpy_linear_layer(W_h, b_h)
+    log_J = numpy_linear_layer(W_J, b_J)
+
+    def encode(X):
+        nnet_outputs = nnet(X)
+        J = -1./2 * np.exp(tanh_scale * np.tanh(log_J(nnet_outputs) / tanh_scale))
+        return J, h(nnet_outputs)
+
+    return encode
+
+
+##########################
+#  plotting image grids  #
+##########################
 
 def make_grid(grid_sidelen, imagevecs, imshape):
     shape = 2*(grid_sidelen,) + imshape
@@ -18,9 +58,18 @@ def make_grid(grid_sidelen, imagevecs, imshape):
         [np.hstack([np.reshape(img, imshape) for img in col]) for col in reshaped])
 
 
+def training_grid(sidelen, trX, imshape, seed=None):
+    rng = npr if seed is None else npr.RandomState(seed=seed)
+    imagevecs = rng.permutation(trX.get_value())[:sidelen**2]
+    return make_grid(sidelen, imagevecs, imshape)
+
+
 def plot_sample_grid(sidelen, imshape, samplefn):
     grid = make_grid(sidelen, samplefn(sidelen**2), imshape)
+    show_sample_matrix(grid, sidelen, imshape)
 
+
+def show_sample_matrix(grid, sidelen, imshape, cmap='gray', outfile=None):
     plt.matshow(grid)
     ax = plt.gca()
     xx, yy = imshape
@@ -30,40 +79,57 @@ def plot_sample_grid(sidelen, imshape, samplefn):
     ax.set_yticklabels([])
     ax.xaxis.set_ticks_position('none')
     ax.yaxis.set_ticks_position('none')
-    plt.set_cmap('gray')
+    plt.set_cmap(cmap)
+    # plt.axis('off')
+    plt.gca().set_frame_on(False)
     plt.grid(True, color='w', linestyle='-')
 
-
-def training_grid(sidelen, trX, imshape):
-    imagevecs = npr.permutation(trX.get_value())[:sidelen**2]
-    return make_grid(sidelen, imagevecs, imshape)
+    if outfile:
+        plt.savefig(outfile, transparent=True, dpi=200, bbox_inches='tight')
+        plt.close()
 
 
 def regular_grid(sidelen, decoder_params, imshape, limits=[-2,2,-2,2], axes=None,
-                 corners=None, rand_scale=1., seed=None, decoder=gaussian_decoder):
+                 vecs=None, rand_scale=1., seed=None, decoder=gaussian_decoder):
     rng = npr if seed is None else npr.RandomState(seed=seed)
     zdim = get_zdim(decoder_params)
 
-    if axes is not None:
-        x0, x1, y0, y1 = limits
-        x0, x1 = x0 * np.eye(zdim)[axes[0]], x1 * np.eye(zdim)[axes[0]]
-        y0, y1 = y0 * np.eye(zdim)[axes[1]], y1 * np.eye(zdim)[axes[1]]
-    elif corners is None:
-        corners = rand_scale * rng.randn(4, zdim)
-    x0, x1, y0, y1 = corners
+    if vecs is not None:
+        v0, v1 = vecs
+    elif axes is not None:
+        v0, v1 = np.eye(zdim)[axes[0]], np.eye(zdim)[axes[1]]
+    else:
+        v0, v1 = np.linalg.qr(rng.randn(zdim, 2))[0].T
 
-    def regular_grid(zdim):
-        return np.vstack([(1-t)*x0 + t*x1 + (1-s)*y0 + s*y1
-                          for t in np.linspace(0, 1, sidelen, endpoint=True)
-                          for s in np.linspace(0, 1, sidelen, endpoint=True)])
-
-    decode = decoder(decoder_params)
-    grid = regular_grid(zdim)
-    vals = decode(grid)
-    imagevecs = vals[0].eval() if isinstance(vals, tuple) else vals.eval()
-
+    x0, x1, y0, y1 = limits[0]*v0, limits[1]*v0, limits[2]*v1, limits[3]*v1
+    interval = np.linspace(0, 1, sidelen, endpoint=True)
+    regular_grid = lambda zdim: np.vstack(
+            [(1-t)*x0 + t*x1 + (1-s)*y0 + s*y1 for t in interval for s in interval])
+    imagevecs = points_to_imagevecs(regular_grid, decoder_params, decoder)
     return make_grid(sidelen, imagevecs, imshape)
 
+
+def points_to_imagevecs(points, decoder_params, decoder=gaussian_decoder):
+    decode = decoder(decoder_params)
+    vals = decode(points)
+    out = vals[0] if isinstance(vals, tuple) else vals
+    if not isinstance(vals, np.ndarray):
+        out = out.eval()
+    return out
+
+
+def random_grid(sidelen, decoder_params, imshape, seed=None):
+    rng = npr if seed is None else npr.RandomState(seed=seed)
+    zdim = get_zdim(decoder_params)
+
+    points = rng.randn(sidelen**2, zdim)
+    imagevecs = points_to_imagevecs(points, decoder_params)
+    return make_grid(sidelen, imagevecs, imshape)
+
+
+#################
+#  interactive  #
+#################
 
 class Interactive(object):
     def __init__(self, draw_func, init_image, limits):
@@ -142,38 +208,11 @@ class Interactive(object):
         self.canvas.blit(self.imax.bbox)
 
 
-def numpy_gaussian_decoder(decoder_params):
-    # mostly redundant code with encoder and gaussian_decoder in vae.py
-    nnet_params, (W_mu, b_mu), _ = \
-        unpack_gaussian_params(decoder_params)
-    nnet = compose(numpy_tanh_layer(W, b) for W, b in nnet_params)
-    mu = numpy_linear_layer(W_mu, b_mu)
-
-    def decode(X):
-        return sigmoid(mu(nnet(X)))
-
-    return decode
-
-
-def numpy_encoder(encoder_params, tanh_scale):
-    # mostly redundant code with encoder in vae.py
-    nnet_params, (W_h, b_h), (W_J, b_J) = \
-        unpack_gaussian_params(encoder_params)
-
-    nnet = compose(numpy_tanh_layer(W, b) for W, b in nnet_params)
-    h = numpy_linear_layer(W_h, b_h)
-    log_J = numpy_linear_layer(W_J, b_J)
-
-    def encode(X):
-        nnet_outputs = nnet(X)
-        J = -1./2 * np.exp(tanh_scale * np.tanh(log_J(nnet_outputs) / tanh_scale))
-        return J, h(nnet_outputs)
-
-    return encode
-
 def run_interactive(decoder_params, dims, limits):
+    # TODO select a random subspace based on seed like in regular_grid qr, or
+    # maybe set subspace with sliders
     zdim = get_zdim(decoder_params)
-    decode = numpy_gaussian_decoder(decoder_params)
+    decode = gaussian_decoder(decoder_params)
     vec = np.zeros(zdim)
 
     def draw(x, y):
@@ -181,3 +220,67 @@ def run_interactive(decoder_params, dims, limits):
         return reshape_square(decode(vec))
 
     return Interactive(draw, draw(0,0), limits)
+
+
+###############
+#  colormaps  #
+###############
+
+def register_parula1():
+    cmap = LinearSegmentedColormap.from_list(
+        'parula',
+        ['#352A87',
+        '#0268E1',
+        '#108ED2',
+        # '#0FAEB9',  # maybe
+        '#65BE86',  # maybe
+        '#C0BC60',
+        '#FFC337',
+        '#F9FB0E'])
+    cm.register_cmap(name='parula', cmap=cmap)
+
+def register_parula2():
+    cm_data = [[0.2081, 0.1663, 0.5292], [0.2116238095, 0.1897809524, 0.5776761905], 
+    [0.212252381, 0.2137714286, 0.6269714286], [0.2081, 0.2386, 0.6770857143], 
+    [0.1959047619, 0.2644571429, 0.7279], [0.1707285714, 0.2919380952, 
+    0.779247619], [0.1252714286, 0.3242428571, 0.8302714286], 
+    [0.0591333333, 0.3598333333, 0.8683333333], [0.0116952381, 0.3875095238, 
+    0.8819571429], [0.0059571429, 0.4086142857, 0.8828428571], 
+    [0.0165142857, 0.4266, 0.8786333333], [0.032852381, 0.4430428571, 
+    0.8719571429], [0.0498142857, 0.4585714286, 0.8640571429], 
+    [0.0629333333, 0.4736904762, 0.8554380952], [0.0722666667, 0.4886666667, 
+    0.8467], [0.0779428571, 0.5039857143, 0.8383714286], 
+    [0.079347619, 0.5200238095, 0.8311809524], [0.0749428571, 0.5375428571, 
+    0.8262714286], [0.0640571429, 0.5569857143, 0.8239571429], 
+    [0.0487714286, 0.5772238095, 0.8228285714], [0.0343428571, 0.5965809524, 
+    0.819852381], [0.0265, 0.6137, 0.8135], [0.0238904762, 0.6286619048, 
+    0.8037619048], [0.0230904762, 0.6417857143, 0.7912666667], 
+    [0.0227714286, 0.6534857143, 0.7767571429], [0.0266619048, 0.6641952381, 
+    0.7607190476], [0.0383714286, 0.6742714286, 0.743552381], 
+    [0.0589714286, 0.6837571429, 0.7253857143], 
+    [0.0843, 0.6928333333, 0.7061666667], [0.1132952381, 0.7015, 0.6858571429], 
+    [0.1452714286, 0.7097571429, 0.6646285714], [0.1801333333, 0.7176571429, 
+    0.6424333333], [0.2178285714, 0.7250428571, 0.6192619048], 
+    [0.2586428571, 0.7317142857, 0.5954285714], [0.3021714286, 0.7376047619, 
+    0.5711857143], [0.3481666667, 0.7424333333, 0.5472666667], 
+    [0.3952571429, 0.7459, 0.5244428571], [0.4420095238, 0.7480809524, 
+    0.5033142857], [0.4871238095, 0.7490619048, 0.4839761905], 
+    [0.5300285714, 0.7491142857, 0.4661142857], [0.5708571429, 0.7485190476, 
+    0.4493904762], [0.609852381, 0.7473142857, 0.4336857143], 
+    [0.6473, 0.7456, 0.4188], [0.6834190476, 0.7434761905, 0.4044333333], 
+    [0.7184095238, 0.7411333333, 0.3904761905], 
+    [0.7524857143, 0.7384, 0.3768142857], [0.7858428571, 0.7355666667, 
+    0.3632714286], [0.8185047619, 0.7327333333, 0.3497904762], 
+    [0.8506571429, 0.7299, 0.3360285714], [0.8824333333, 0.7274333333, 0.3217], 
+    [0.9139333333, 0.7257857143, 0.3062761905], [0.9449571429, 0.7261142857, 
+    0.2886428571], [0.9738952381, 0.7313952381, 0.266647619], 
+    [0.9937714286, 0.7454571429, 0.240347619], [0.9990428571, 0.7653142857, 
+    0.2164142857], [0.9955333333, 0.7860571429, 0.196652381], 
+    [0.988, 0.8066, 0.1793666667], [0.9788571429, 0.8271428571, 0.1633142857], 
+    [0.9697, 0.8481380952, 0.147452381], [0.9625857143, 0.8705142857, 0.1309], 
+    [0.9588714286, 0.8949, 0.1132428571], [0.9598238095, 0.9218333333, 
+    0.0948380952], [0.9661, 0.9514428571, 0.0755333333], 
+    [0.9763, 0.9831, 0.0538]]
+
+    parula_map = LinearSegmentedColormap.from_list('parula', cm_data)
+    cm.register_cmap(name='parula', cmap=parula_map)

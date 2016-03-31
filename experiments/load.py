@@ -10,7 +10,7 @@ from scipy.ndimage.filters import gaussian_filter
 
 from util import floatX
 
-def load(filename):
+def load(filename, concatenate_dict=True):
     def standardize(d):
         recenter = lambda d: d - np.percentile(d, 0.01)
         rescale = lambda d: d / np.percentile(d, 99.99)
@@ -24,12 +24,13 @@ def load(filename):
             datadict = pickle.load(infile)
         datadict = {k:standardize(v) for k, v in datadict.iteritems()
                     if k not in {'SOD1-LC-1-15-_04', 'SOD1-LC-1-15-_24'}}
-        data = map(op.itemgetter(1), sorted(datadict.items(), key=op.itemgetter(0)))
-        return np.concatenate(datadict.values())
+        if concatenate_dict:
+            data = map(op.itemgetter(1), sorted(datadict.items(), key=op.itemgetter(0)))
+            return np.concatenate(datadict.values())
+        return datadict
 
 
 def load_mice(N, file='data/images_for_vae.npy', permute=True, addnoise=True):
-
     data = load(file).astype(theano.config.floatX)
     if permute:
         data = np.random.permutation(data)

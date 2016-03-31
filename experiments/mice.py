@@ -83,7 +83,7 @@ def plot(vals):
 
 def save(encoder_params, decoder_params):
     params = get_ndarrays(encoder_params), get_ndarrays(decoder_params)
-    with gzip.open('vae_fit.pkl.gz', 'w') as f:
+    with gzip.open('vae_fit_2d.pkl.gz', 'w') as f:
         pickle.dump(params, f, protocol=-1)
         print 'saved!'
 
@@ -100,7 +100,7 @@ if __name__ == '__main__':
     tanh_scale = 7.
 
     encoder_params, decoder_params, fit = make_gaussian_fitter(
-            trX, 10, [200, 200], [200, 200], tanh_scale=tanh_scale, callback=plot)
+            trX, 2, [200, 200], [200, 200], tanh_scale=tanh_scale, callback=plot)
 
     # # initialization
     # fit(1, 50, 1, adadelta())
