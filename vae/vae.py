@@ -7,21 +7,10 @@ from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 from time import time
 import logging
 
-from util import floatX, flatten, argprint
+from util import floatX, flatten, argprint, get_zdim
 from nnet import compose, tanh_layer, sigmoid_layer, linear_layer, init_layer
 
 srng = RandomStreams(seed=1)
-
-
-##########
-#  util  #
-##########
-
-def get_zdim(decoder_params):
-    try:
-        return decoder_params[0][0].get_value().shape[0]
-    except AttributeError:
-        return decoder_params[0][0].shape[0]
 
 
 ####################
@@ -67,17 +56,6 @@ def set_biases_to_data_stats(trX, decoder_params):
 ##########################
 #  enoders and decoders  #
 ##########################
-
-
-def unpack_gaussian_params(coder_params):
-    nnet_params, ((W_mu, b_mu), (W_sigma, b_sigma)) = \
-        coder_params[:-2], coder_params[-2:]
-    return nnet_params, (W_mu, b_mu), (W_sigma, b_sigma)
-
-
-def unpack_binary_params(coder_params):
-    nnet_params, (W_out, b_out) = coder_params[:-1], coder_params[-1]
-    return nnet_params, (W_out, b_out)
 
 
 def encoder(encoder_params, tanh_scale):

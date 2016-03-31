@@ -7,7 +7,7 @@ from matplotlib import cm
 from matplotlib.colors import LinearSegmentedColormap
 
 from nnet import compose, numpy_tanh_layer, numpy_linear_layer
-from util import sigmoid, reshape_square
+from util import sigmoid, reshape_square, get_zdim, unpack_gaussian_params
 
 
 #####################
@@ -90,7 +90,9 @@ def show_sample_matrix(grid, sidelen, imshape, cmap='gray', outfile=None):
 
 
 def regular_grid(sidelen, decoder_params, imshape, limits=[-2,2,-2,2], axes=None,
-                 vecs=None, rand_scale=1., seed=None, decoder=gaussian_decoder):
+                 corners=None, rand_scale=1., seed=None, decoder=None):
+    if decoder is None:
+        from vae import gaussian_decoder as decoder
     rng = npr if seed is None else npr.RandomState(seed=seed)
     zdim = get_zdim(decoder_params)
 
@@ -208,17 +210,52 @@ class Interactive(object):
         self.canvas.blit(self.imax.bbox)
 
 
-def run_interactive(decoder_params, dims, limits):
-    # TODO select a random subspace based on seed like in regular_grid qr, or
-    # maybe set subspace with sliders
+def numpy_gaussian_decoder(decoder_params):
+    # mostly redundant code with encoder and gaussian_decoder in vae.py
+    nnet_params, (W_mu, b_mu), _ = \
+        unpack_gaussian_params(decoder_params)
+    nnet = compose(numpy_tanh_layer(W, b) for W, b in nnet_params)
+    mu = numpy_linear_layer(W_mu, b_mu)
+
+    def decode(X):
+        return sigmoid(mu(nnet(X)))
+
+    return decode
+
+
+def numpy_encoder(encoder_params, tanh_scale):
+    # mostly redundant code with encoder in vae.py
+    nnet_params, (W_h, b_h), (W_J, b_J) = \
+        unpack_gaussian_params(encoder_params)
+
+    nnet = compose(numpy_tanh_layer(W, b) for W, b in nnet_params)
+    h = numpy_linear_layer(W_h, b_h)
+    log_J = numpy_linear_layer(W_J, b_J)
+
+    def encode(X):
+        nnet_outputs = nnet(X)
+        J = -1./2 * np.exp(tanh_scale * np.tanh(log_J(nnet_outputs) / tanh_scale))
+        return J, h(nnet_outputs)
+
+    return encode
+
+def run_interactive(decoder_params, dims=None, seed=None, limits=[-3., 3., -3., 3.]):
     zdim = get_zdim(decoder_params)
-    decode = gaussian_decoder(decoder_params)
-    vec = np.zeros(zdim)
+    decode = numpy_gaussian_decoder(decoder_params)
 
-    def draw(x, y):
-        vec[dims] = (x,y)
-        return reshape_square(decode(vec))
+    if not (dims is None) ^ (seed is None):
+        raise ValueError
 
+    if dims is not None:
+        out = np.zeros(zdim)
+        def vec(x, y):
+            out[dims] = x, y
+            return out
+    else:
+        basis = np.linalg.qr(npr.RandomState(seed).randn(zdim, 2))[0]
+        vec = lambda x, y: np.dot(basis, (x, y))
+
+    draw = lambda x, y: reshape_square(decode(vec(x, y)))
     return Interactive(draw, draw(0,0), limits)
 
 

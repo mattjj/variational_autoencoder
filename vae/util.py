@@ -1,5 +1,4 @@
 import numpy as np
-import theano
 import logging
 from collections import Iterable
 from itertools import chain
@@ -10,10 +9,12 @@ from operator import methodcaller
 
 
 def floatX(X):
+    import theano
     return np.asarray(X, dtype=theano.config.floatX)
 
 
 def shared_zeros_like(a):
+    import theano
     return theano.shared(
         np.zeros_like(a.get_value(), dtype=theano.config.floatX))
 
@@ -68,3 +69,25 @@ def treemap(f,l):
 def get_ndarrays(params):
     get_value = lambda x: x if isinstance(x, np.ndarray) else x.get_value()
     return treemap(get_value, params)
+
+
+########################
+#  vae-specific stuff  #
+########################
+
+def get_zdim(decoder_params):
+    try:
+        return decoder_params[0][0].get_value().shape[0]
+    except AttributeError:
+        return decoder_params[0][0].shape[0]
+
+
+def unpack_gaussian_params(coder_params):
+    nnet_params, ((W_mu, b_mu), (W_sigma, b_sigma)) = \
+        coder_params[:-2], coder_params[-2:]
+    return nnet_params, (W_mu, b_mu), (W_sigma, b_sigma)
+
+
+def unpack_binary_params(coder_params):
+    nnet_params, (W_out, b_out) = coder_params[:-1], coder_params[-1]
+    return nnet_params, (W_out, b_out)
