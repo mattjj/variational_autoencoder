@@ -1,7 +1,5 @@
 from __future__ import division
 import numpy as np
-import theano
-import theano.tensor as T
 
 from util import floatX, sigmoid
 
@@ -34,9 +32,14 @@ def init_layer(shape):
 
 ### theano-backed layers
 
-tanh_layer = make_layer(T.dot, T.tanh)
-sigmoid_layer = make_layer(T.dot, T.nnet.sigmoid)
-linear_layer = make_layer(T.dot, lambda x: x)
+try:
+    import theano
+    import theano.tensor as T
+    tanh_layer = make_layer(T.dot, T.tanh)
+    sigmoid_layer = make_layer(T.dot, T.nnet.sigmoid)
+    linear_layer = make_layer(T.dot, lambda x: x)
+except ImportError:
+    pass
 
 
 ### numpy-backed layers
