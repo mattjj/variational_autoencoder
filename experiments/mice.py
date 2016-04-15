@@ -91,12 +91,13 @@ if __name__ == '__main__':
     logging.info('\n\nStarting experiment!')
     np.random.seed(0)
 
-    N = 750000  # 750k is about the memory limit on 3GB GPU
+    N = 100000  # 750k is about the memory limit on 3GB GPU for 30x30
     # trX = load_mice(N, 'data/sod1-shrunk.npy')
     # trX = load_mice(N, 'data/sod1-newest.npy')
     # trX = load_mice(N, 'data/new-dawn-corrected-shrunk.npy')
     # trX = load_mice(N, 'data/new-dawn-corrected-shrunk2.pkl.gz')
-    trX = load_mice(N, 'data/new-dawn-corrected-shrunk3.pkl.gz')
+    # trX = load_mice(N, 'data/new-dawn-corrected-shrunk3.pkl.gz')
+    trX = load_mice(N, 'data/frames-80x80.pkl.gz')
     tanh_scale = 7.
 
     encoder_params, decoder_params, fit = make_gaussian_fitter(

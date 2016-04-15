@@ -22,7 +22,8 @@ def load(filename, concatenate_dict=True):
         openfile = open if filename.endswith('.pkl') else gzip.open
         with openfile(filename, 'r') as infile:
             datadict = pickle.load(infile)
-        datadict = {k:standardize(v) for k, v in datadict.iteritems()
+        get_images = lambda v: v['images'] if isinstance(v, dict) else v
+        datadict = {k:standardize(get_images(v)) for k, v in datadict.iteritems()
                     if k not in {'SOD1-LC-1-15-_04', 'SOD1-LC-1-15-_24'}}
         if concatenate_dict:
             data = map(op.itemgetter(1), sorted(datadict.items(), key=op.itemgetter(0)))
