@@ -18,19 +18,19 @@ def make_grid(grid_sidelen, imagevecs, imshape):
         [np.hstack([np.reshape(img, imshape) for img in col]) for col in reshaped])
 
 
-def sample_grid(sidelen, decoder_params, imshape, decoder=gaussian_decoder):
-    def generate_samples(n, decoder_params):
-        zdim = get_zdim(decoder_params)
-        decode = decoder(decoder_params)
-        vals = decode(npr.randn(n, zdim))
-        return vals[0].eval() if isinstance(vals, tuple) else vals.eval()
-
-    imagevecs = generate_samples(sidelen**2, decoder_params)
+def training_grid(sidelen, trX, imshape, seed=None):
+    rng = npr if seed is None else npr.RandomState(seed=seed)
+    imagevecs = rng.permutation(trX.get_value())[:sidelen**2]
     return make_grid(sidelen, imagevecs, imshape)
 
 
-def plot_sample_grid(sidelen, decoder_params, imshape, decoder=gaussian_decoder):
-    plt.matshow(sample_grid(sidelen, decoder_params, imshape, decoder=decoder))
+def plot_sample_grid(sidelen, imshape, samplefn):
+    grid = make_grid(sidelen, samplefn(sidelen**2), imshape)
+    show_sample_matrix(grid, sidelen, imshape)
+
+
+def show_sample_matrix(grid, sidelen, imshape, cmap='gray', outfile=None):
+    plt.matshow(grid)
     ax = plt.gca()
     xx, yy = imshape
     ax.set_yticks(np.arange(0, (sidelen+1)*xx, xx) - 0.5)
@@ -39,18 +39,54 @@ def plot_sample_grid(sidelen, decoder_params, imshape, decoder=gaussian_decoder)
     ax.set_yticklabels([])
     ax.xaxis.set_ticks_position('none')
     ax.yaxis.set_ticks_position('none')
-    plt.set_cmap('gray')
-    plt.grid(True, color='w', linestyle='-')
+    plt.set_cmap(cmap)
+    # plt.axis('off')
+    plt.gca().set_frame_on(False)
+    plt.grid(True, color='r', linestyle='-')
+
+    if outfile:
+        plt.savefig(outfile, transparent=True, dpi=200, bbox_inches='tight')
+        plt.close()
 
 
-def training_grid(sidelen, trX, imshape):
-    imagevecs = npr.permutation(trX.get_value())[:sidelen**2]
+def regular_grid(sidelen, decoder_params, imshape, limits=[-2,2,-2,2], axes=None,
+                 corners=None, rand_scale=1., seed=None, decoder=None):
+    if decoder is None:
+        from vae import gaussian_decoder as decoder
+    rng = npr if seed is None else npr.RandomState(seed=seed)
+    zdim = get_zdim(decoder_params)
+
+    if vecs is not None:
+        v0, v1 = vecs
+    elif axes is not None:
+        v0, v1 = np.eye(zdim)[axes[0]], np.eye(zdim)[axes[1]]
+    else:
+        v0, v1 = np.linalg.qr(rng.randn(zdim, 2))[0].T
+
+    x0, x1, y0, y1 = limits[0]*v0, limits[1]*v0, limits[2]*v1, limits[3]*v1
+    interval = np.linspace(0, 1, sidelen, endpoint=True)
+    regular_grid = lambda zdim: np.vstack(
+            [(1-t)*x0 + t*x1 + (1-s)*y0 + s*y1 for t in interval for s in interval])
+    imagevecs = points_to_imagevecs(regular_grid, decoder_params, decoder)
     return make_grid(sidelen, imagevecs, imshape)
 
 
-def encode_seq(X, encoder_params):
-    encode = encoder(encoder_params)
-    return encode(X)[0].eval()
+def points_to_imagevecs(points, decoder_params, decoder=gaussian_decoder):
+    decode = decoder(decoder_params)
+    vals = decode(points)
+    out = vals[0] if isinstance(vals, tuple) else vals
+    if not isinstance(vals, np.ndarray):
+        out = out.eval()
+    return out
+
+
+def random_grid(sidelen, decoder_params, imshape, seed=None):
+    rng = npr if seed is None else npr.RandomState(seed=seed)
+    zdim = get_zdim(decoder_params)
+
+    points = rng.randn(sidelen**2, zdim)
+    imagevecs = points_to_imagevecs(points, decoder_params)
+    return make_grid(sidelen, imagevecs, imshape)
 
 
 class Interactive(object):
